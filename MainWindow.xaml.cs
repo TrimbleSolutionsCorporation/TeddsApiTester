@@ -3,7 +3,6 @@ using System.IO;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Windows;
-using System.Windows.Documents;
 using System.Windows.Threading;
 
 using Microsoft.Win32;
@@ -101,7 +100,34 @@ namespace TeddsAPITester
 
             //Retrieve output
             outputVariablesXml = calculator2.GetVariables();
-            outputRtf = calculator2.GetOutput();                
+            outputRtf = calculator2.GetOutput();
+        }
+
+        #endregion
+
+        #region "Document serialization methods"
+
+        /// <summary>
+        /// Using a template for an empty .ted Tedds document file insert the calculation details, variables and output RTF in to that template
+        /// and save the result as a .ted document which can be opened in the Tedds applciation directly or imported into Tedds for Word.
+        /// 
+        /// </summary>
+        /// <param name="fileName">Output file name</param>
+        /// <param name="calcFileName">Name of Calc Library file where calculation is stored</param>
+        /// <param name="calcItemName">Name of Calc Item where calculation is stored</param>
+        /// <param name="outputVariablesXML">Output variables xml</param>
+        /// <param name="outputRtf">Output RTF</param>
+        public void SaveTeddsDocument(string fileName, string calcFileName, string calcItemName, string outputVariablesXML, string outputRtf)
+        {
+            byte[] documentTemplateResource = Properties.Resources.DocumentTemplate;
+            string document = Encoding.UTF8.GetString(documentTemplateResource, 0, documentTemplateResource.Length);
+            document = document
+                .Replace("[[CALCFILENAME]]", calcFileName)
+                .Replace("[[CALCITEMNAME]]", calcItemName)
+                .Replace("[[VARIABLES]]", outputVariablesXML)
+                .Replace("[[OUTPUT]]", outputRtf);
+
+            File.WriteAllText(fileName, document);
         }
 
         #endregion
@@ -128,29 +154,42 @@ namespace TeddsAPITester
             }
 
             StatusText = $"Started calculating {CalcItemName}...";
-            OutputRTF = OutputVariablesXML = null;
+            OutputRtf = OutputVariablesXML = null;
             try
-            { 
+            {
                 string outputVariablesXml;
-                if (IsCreateOutputRTFEnabled)
+                if (IsCreateOutputRtfEnabled)
                 {
                     string outputRtf;
                     Calculate(InputVariablesXml, CalcFileName, CalcItemNameEncoded,
                         IsShowUserInterfaceEnabled, out outputVariablesXml, out outputRtf);
-                    OutputRTF = outputRtf;
+                    OutputRtf = outputRtf;
                 }
                 else
                 {
                     CalculateNoOutputRtf(InputVariablesXml, CalcFileName, CalcItemNameEncoded,
                         IsShowUserInterfaceEnabled, out outputVariablesXml);
-                }            
+                }
                 OutputVariablesXML = outputVariablesXml;
                 StatusText = "...finished Calculating";
-            }        
+            }
             catch (COMException ex)
             {
                 StatusText = $"Exception occured: {ex.Message}";
-            }    
+            }
+        }
+        /// <summary>
+        /// Calculate button event handler
+        /// </summary>
+        /// <param name="sender">Sender of event</param>
+        /// <param name="e">Event arguments</param>
+        private void OnSaveAsTeddsDocumentButtonClick(object sender, RoutedEventArgs e)
+        {
+            SaveFileDialog saveDialog = new SaveFileDialog()
+            { Filter = SaveTedFilter };
+
+            if (saveDialog.ShowDialog(this) == true)
+                SaveTeddsDocument(saveDialog.FileName, CalcFileName, CalcItemName, OutputVariablesXML, OutputRtf);
         }
         /// <summary>
         /// Exit button event handler
@@ -171,7 +210,7 @@ namespace TeddsAPITester
             OpenFileDialog fileDialog = new OpenFileDialog()
             {
                 FileName = InputVariablesFileName,
-                Filter = XmlFilter
+                Filter = OpenXmlFilter
             };
 
             if (fileDialog.ShowDialog(this) == true)
@@ -187,7 +226,7 @@ namespace TeddsAPITester
         private void OnSaveAsOutputVariablesXmlClick(object sender, RoutedEventArgs e)
         {
             SaveFileDialog saveDialog = new SaveFileDialog()
-            { Filter = XmlFilter };
+            { Filter = SaveXmlFilter };
 
             if (saveDialog.ShowDialog(this) == true)
                 File.WriteAllText(saveDialog.FileName, OutputVariablesXML);
@@ -201,10 +240,10 @@ namespace TeddsAPITester
         private void OnSaveAsOutputRtfClick(object sender, RoutedEventArgs e)
         {
             SaveFileDialog saveDialog = new SaveFileDialog()
-            { Filter = RtfFilter };
+            { Filter = SaveRtfFilter };
 
             if (saveDialog.ShowDialog(this) == true)
-                File.WriteAllText(saveDialog.FileName, OutputRTF);
+                File.WriteAllText(saveDialog.FileName, OutputRtf);
         }
 
         #endregion
@@ -232,7 +271,7 @@ namespace TeddsAPITester
             CalcFileName = Properties.Settings.Default.CalcFileName;
             CalcItemName = Properties.Settings.Default.CalcItemName;
             IsShowUserInterfaceEnabled = Properties.Settings.Default.ShowUserInterface;
-            IsCreateOutputRTFEnabled = Properties.Settings.Default.CreateOutputRtf;
+            IsCreateOutputRtfEnabled = Properties.Settings.Default.CreateOutputRtf;
         }
         /// <summary>
         /// Save input settings which simplifies using application for repeated testing 
@@ -243,7 +282,7 @@ namespace TeddsAPITester
             Properties.Settings.Default.CalcFileName = CalcFileName;
             Properties.Settings.Default.CalcItemName = CalcItemName;
             Properties.Settings.Default.ShowUserInterface = IsShowUserInterfaceEnabled;
-            Properties.Settings.Default.CreateOutputRtf = IsCreateOutputRTFEnabled;
+            Properties.Settings.Default.CreateOutputRtf = IsCreateOutputRtfEnabled;
             Properties.Settings.Default.Save();
         }
         #endregion
@@ -296,21 +335,16 @@ namespace TeddsAPITester
         /// <summary>
         /// Document output from the last run of the calculation in the RTF format.
         /// </summary>
-        public string OutputRTF
+        public string OutputRtf
         {
-            get
-            {
-                return new TextRange(
-                    _outputRtftRichTextBox.Document.ContentStart,
-                    _outputRtftRichTextBox.Document.ContentEnd).Text;
-            }
+            get { return _outputRtf; }
             set
             {
-                _outputRtftRichTextBox.Document.Blocks.Clear();
-                if (!string.IsNullOrEmpty(value))
+                _outputRtfRichTextBox.Document.Blocks.Clear();
+                if (!string.IsNullOrEmpty(_outputRtf = value))
                 {
                     using (MemoryStream stream = new MemoryStream(Encoding.UTF8.GetBytes(value)))
-                        _outputRtftRichTextBox.Selection.Load(stream, DataFormats.Rtf);
+                        _outputRtfRichTextBox.Selection.Load(stream, DataFormats.Rtf);
                 }
             }
         }
@@ -338,14 +372,24 @@ namespace TeddsAPITester
         /// <summary>
         /// Calculating option which determines whether the document RTF is produced or not
         /// </summary>
-        public bool IsCreateOutputRTFEnabled
+        public bool IsCreateOutputRtfEnabled
         {
             get { return _createOutputRtfCheckBox.IsChecked == true; }
             set { _createOutputRtfCheckBox.IsChecked = value; }
         }
 
-        private const string XmlFilter = "XML files (*.xml)|*.xml|All files (*.*)|*.*";
-        private const string RtfFilter = "RTF files (*.rtf)|*.rtf|All files (*.*)|*.*";
+        #endregion
+
+        #region "Private members"
+
+        private string _outputRtf;
+
+        private const string SaveXmlFilter = "XML file (*.xml)|*.xml";
+        private const string SaveRtfFilter = "Rich Text Format (*.rtf)|*.rtf";
+        private const string SaveTedFilter = "Tedds Document (*.ted)|*.ted";
+
+        private const string OpenAllSuffix = "|All files (*.*)|*.*";
+        private const string OpenXmlFilter = SaveXmlFilter + OpenAllSuffix;
 
         #endregion       
     }

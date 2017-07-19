@@ -52,7 +52,7 @@
             <StackPanel Grid.Column="1" Margin="7,0,0,0">
                 <GroupBox Header="Output variables (xml)" Height="166" >
                     <DockPanel Margin="7,3,3,3" >
-                        <Button Content="Save As" Width="75" DockPanel.Dock="Right"
+                        <Button Content="Save As..." Width="75" DockPanel.Dock="Right"
                                 Click="OnSaveAsOutputVariablesXmlClick"
                                 VerticalAlignment="Top"/>
                         <TextBox Name="_outputVariablesTextBox" IsReadOnly="True"
@@ -63,9 +63,16 @@
         </Grid>
 
             <StackPanel DockPanel.Dock="Bottom">
-                <Button Margin="7,3"  Content="Calculate..."
-                    Click="OnCalculateButtonClick" IsDefault="True"/>
-
+                <DockPanel Margin="7,3, 7, 7">
+                    <Button Margin="7,0,0,0" Content="Save As Tedds Document..."
+                    HorizontalAlignment="Right"
+                            Width="150" DockPanel.Dock="Right" 
+                            Click="OnSaveAsTeddsDocumentButtonClick"/>
+                <Button Margin="7,0,0,0"  Content="Calculate..."
+                    HorizontalAlignment="Right"
+                            Width="150" DockPanel.Dock="Right" 
+                            Click="OnCalculateButtonClick" IsDefault="True"/>
+                </DockPanel>
                 <DockPanel Margin="7,3, 7, 7">
                     <Button Content="Exit" DockPanel.Dock="Right"
                     Width="75"
@@ -77,10 +84,10 @@
         
             <GroupBox Header="Output (rtf)" Margin="7,0,7,7">
                 <DockPanel Margin="7,3,3,3">
-                    <Button Content="Save As" Width="75"  DockPanel.Dock="Right"
+                    <Button Content="Save As..." Width="75"  DockPanel.Dock="Right"
                         Click="OnSaveAsOutputRtfClick"
                         VerticalAlignment="Top" />
-                    <RichTextBox Name="_outputRtftRichTextBox" 
+                    <RichTextBox Name="_outputRtfRichTextBox" 
                              IsReadOnly="True" IsDocumentEnabled="True" 
                              VerticalScrollBarVisibility="Visible" Margin="3,0,3,0"/>
                 </DockPanel>

@@ -59,5 +59,15 @@ namespace TeddsAPITester.Properties {
                 resourceCulture = value;
             }
         }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Byte[].
+        /// </summary>
+        internal static byte[] DocumentTemplate {
+            get {
+                object obj = ResourceManager.GetObject("DocumentTemplate", resourceCulture);
+                return ((byte[])(obj));
+            }
+        }
     }
 }

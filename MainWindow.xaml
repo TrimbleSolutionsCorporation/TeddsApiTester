@@ -5,93 +5,102 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         mc:Ignorable="d" MinHeight="500" MinWidth="600"
         Title="Tedds API tester" Icon="TeddsAPI.ico"
-        Height="500" Width="800" WindowStartupLocation="CenterScreen">
-   
-    <DockPanel>
-            <Grid DockPanel.Dock="Top" Margin="7,3">
+        Height="500" Width="800" WindowStartupLocation="CenterScreen"
+        Style="{DynamicResource TrimbleGrayWindow}">
+
+    <Window.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="TrimbleTheme.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </Window.Resources>
+
+    <DockPanel Margin="20,20,20,0">
+        <Grid DockPanel.Dock="Top">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
-            
-            <StackPanel Grid.Column="0">
-                <GroupBox Header="Input variables (xml)" >
-                    <StackPanel Margin="7,3,3,3" Orientation="Vertical">
+
+            <StackPanel Grid.Column="0" Margin="0,0,12,0">
+                <GroupBox Header="Input variables (xml)">
+                    <StackPanel Margin="0,3,0,0" Orientation="Vertical">
                         <DockPanel>
-                            <TextBlock Text="File name" Width =" 80" DockPanel.Dock="Left" />
-                            <Button Content="..." DockPanel.Dock="Right"
+                            <TextBlock Text="File name" Width =" 80" DockPanel.Dock="Left"/>
+                            <Button Style="{StaticResource TrimbleBlueButton}" Content="..." DockPanel.Dock="Right"
                                    Width="{Binding Path=ActualHeight, RelativeSource={RelativeSource Self}}"
                                    Click="OnSelectInputVariablesFileClick"/>
                             <TextBox Name="_inputVariablesFileNameTextBox" 
-                             Margin="3,0,3,0"/>
+                             Margin="0,2,4,2" VerticalAlignment="Top"/>
                         </DockPanel>
                     </StackPanel>
                 </GroupBox >
 
-                <GroupBox Header="Calculation (Calc Item)">
-                    <StackPanel Margin="7,3,3,3" Orientation="Vertical">
+                <GroupBox Header="Calculation (Calc Item)" Margin="0,5,0,0">
+                    <StackPanel Margin="0,3,0,0" Orientation="Vertical">
                         <DockPanel>
-                            <TextBlock Text="File name" Width="80" DockPanel.Dock="Left" />                           
-                            <TextBox Name="_calcItemFileTextBox" Margin="3,0,0,0"/>
+                            <TextBlock Text="File name" Width="80" DockPanel.Dock="Left" />
+                            <TextBox Name="_calcItemFileTextBox"/>
                         </DockPanel>
                         <DockPanel Margin="0,7,0,0">
-                            <TextBlock Text="Item name" Width="80" DockPanel.Dock="Left" />                            
-                            <TextBox Name="_calcItemNameTextBox" Margin="3,0,0,0"/>
+                            <TextBlock Text="Item name" Width="80" DockPanel.Dock="Left" />
+                            <TextBox Name="_calcItemNameTextBox"/>
                         </DockPanel>
                     </StackPanel>
                 </GroupBox>
 
-                <GroupBox Header="Option" Height="45" >
-                    <StackPanel Orientation="Horizontal" Margin="7,3,3,3">
+                <GroupBox Header="Option" Height="45" Margin="0,5,0,0">
+                    <StackPanel Orientation="Horizontal" Margin="0,3,3,3">
                         <CheckBox Name="_showUserInterfaceCheckBox" Content="Show user interface" Margin="0,0,7,0" IsChecked="True"/>
                         <CheckBox Name="_createOutputRtfCheckBox" Content="Create output (rtf)" Margin="0,0,7,0" IsChecked="True"/>
                     </StackPanel>
                 </GroupBox>
             </StackPanel>
-            
-            <StackPanel Grid.Column="1" Margin="7,0,0,0">
+
+            <StackPanel Grid.Column="1" Margin="12,0,0,0">
                 <GroupBox Header="Output variables (xml)" Height="166" >
-                    <DockPanel Margin="7,3,3,3" >
+                    <DockPanel Margin="0,3,0,0" >
                         <Button Content="Save As..." Width="75" DockPanel.Dock="Right"
                                 Click="OnSaveAsOutputVariablesXmlClick"
                                 VerticalAlignment="Top"/>
                         <TextBox Name="_outputVariablesTextBox" IsReadOnly="True"
-                                VerticalScrollBarVisibility="Visible" Margin="0,0,3,0"/>                            
-                        </DockPanel>
+                                VerticalScrollBarVisibility="Visible" Margin="0,0,4,0"/>
+                    </DockPanel>
                 </GroupBox>
             </StackPanel>
         </Grid>
 
-            <StackPanel DockPanel.Dock="Bottom">
-                <DockPanel Margin="7,3, 7, 7">
-                    <Button Margin="7,0,0,0" Content="Save As Tedds Document..."
+        <StackPanel DockPanel.Dock="Bottom" Height="88">
+            <DockPanel Height="44">
+                <Button Margin="7,0,0,0" Content="Save As Tedds Document..."
                     HorizontalAlignment="Right"
                             Width="150" DockPanel.Dock="Right" 
                             Click="OnSaveAsTeddsDocumentButtonClick"/>
-                <Button Margin="7,0,0,0"  Content="Calculate..."
+                <Button Style="{StaticResource TrimbleBlueButton}" Margin="7,0,0,0" Content="Calculate..."
                     HorizontalAlignment="Right"
                             Width="150" DockPanel.Dock="Right" 
                             Click="OnCalculateButtonClick" IsDefault="True"/>
-                </DockPanel>
-                <DockPanel Margin="7,3, 7, 7">
-                    <Button Content="Exit" DockPanel.Dock="Right"
+            </DockPanel>
+            <DockPanel Height="44">
+                <Button Content="Exit" DockPanel.Dock="Right"
                     Width="75"
                     HorizontalAlignment="Right"
                     Click="OnExitButtonClick" IsCancel="True"/>
-                    <TextBlock Name="_statusTextLabel" VerticalAlignment="Center"/>
-                </DockPanel>
-            </StackPanel>
-        
-            <GroupBox Header="Output (rtf)" Margin="7,0,7,7">
-                <DockPanel Margin="7,3,3,3">
-                    <Button Content="Save As..." Width="75"  DockPanel.Dock="Right"
+                <TextBlock Name="_statusTextLabel" VerticalAlignment="Center"/>
+            </DockPanel>
+        </StackPanel>
+
+        <GroupBox Header="Output (rtf)" Margin="0,20,0,0">
+            <DockPanel Margin="0,3,0,0">
+                <Button Content="Save As..." Width="75"  DockPanel.Dock="Right"
                         Click="OnSaveAsOutputRtfClick"
                         VerticalAlignment="Top" />
-                    <RichTextBox Name="_outputRtfRichTextBox" 
+                <RichTextBox Name="_outputRtfRichTextBox" 
                              IsReadOnly="True" IsDocumentEnabled="True" 
-                             VerticalScrollBarVisibility="Visible" Margin="3,0,3,0"/>
-                </DockPanel>
-            </GroupBox>
-       
+                             VerticalScrollBarVisibility="Visible" Margin="0,0,4,0"/>
+            </DockPanel>
+        </GroupBox>
+
     </DockPanel>
 </Window>

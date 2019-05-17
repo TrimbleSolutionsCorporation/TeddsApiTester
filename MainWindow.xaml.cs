@@ -4,6 +4,7 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Windows;
 using System.Windows.Threading;
+using System.Windows.Interop;
 
 using Microsoft.Win32;
 
@@ -49,16 +50,28 @@ namespace TeddsAPITester
         {
             //Create calculator instance and initialize with input
             Calculator calculator = new Calculator();
-            calculator.Initialize(null, inputVariablesXml);
+            User32Native.SetForegroundWindow((IntPtr)calculator.WindowHandle);
 
-            //Apply additional settings/variables
-            calculator.Functions.SetVar("_CalcUI", showUserInterface ? 1 : 0);
+            try
+            {
+                this.IsEnabled = false;
 
-            //Calculate calculation
-            calculator.Functions.Eval($"EvalCalcItem( \"{calcFileName}\", \"{calcItemName}\" )");
+                calculator.Initialize(null, inputVariablesXml);
 
-            //Get output variables
-            outputVariablesXml = calculator.GetVariables();
+                //Apply additional settings/variables
+                calculator.Functions.SetVar("_CalcUI", showUserInterface ? 1 : 0);
+
+                //Calculate calculation
+                calculator.Functions.Eval($"EvalCalcItem( \"{calcFileName}\", \"{calcItemName}\" )");
+
+                //Get output variables
+                outputVariablesXml = calculator.GetVariables();
+            }
+            finally
+            {
+                this.IsEnabled = true;
+                this.Activate();
+            }
         }
 
         /// <summary>
@@ -74,8 +87,10 @@ namespace TeddsAPITester
         public void Calculate(string inputVariablesXml, string calcFileName, string calcItemName,
             bool showUserInterface, out string outputVariablesXml, out string outputRtf)
         {
+            outputVariablesXml = outputRtf = null;
+
             //Create first calculator instance which is only required for retrieving RTF and getting modified input variables
-            Calculator calculator = new Calculator();
+            Calculator calculator = new Calculator();            
 
             if (!showUserInterface)
             {
@@ -96,11 +111,26 @@ namespace TeddsAPITester
 
             //Initialize second calculator but this time with input/output RTF and input variables
             Calculator calculator2 = new Calculator();
-            calculator2.Initialize(inputRtf, inputVariablesXml);
+            User32Native.SetForegroundWindow((IntPtr)calculator2.WindowHandle);
 
-            //Retrieve output
-            outputVariablesXml = calculator2.GetVariables();
-            outputRtf = calculator2.GetOutput();
+            try
+            {
+                this.IsEnabled = false;
+                calculator2.Initialize(inputRtf, inputVariablesXml);
+
+                if (calculator2.Status == CalcStatus.Ok ||
+                    calculator2.Status == CalcStatus.Interrupted)
+                {
+                    //Retrieve output
+                    outputVariablesXml = calculator2.GetVariables();
+                    outputRtf = calculator2.GetOutput();
+                }
+            }
+            finally
+            {
+                this.IsEnabled = true;
+                this.Activate();
+            }
         }
 
         #endregion
@@ -128,6 +158,101 @@ namespace TeddsAPITester
                 .Replace("[[OUTPUT]]", outputRtf);
 
             File.WriteAllText(fileName, document);
+        }
+
+        #endregion
+
+        #region "Calc select methods"
+
+        /// <summary>
+        /// Browse for a Calc Library.
+        /// </summary>
+        /// <param name="parentWindow">Parent window of the control</param>
+        /// <param name="libraryName">Stores the name of the Calc Library file</param>
+        /// <param name="dialogTitle">Title to show on browse dilaog</param>
+        /// <param name="saveLibrary">Bool specifying whether to save library</param>
+        /// <param name="systemDirectories">Bool specifying whether to look for calcs in system directory</param>
+        /// <param name="userDirectories">Bool specifying whether to look for calcs in user directory</param>
+        /// <param name="usePlaceholders">Bool specifying whether to use place holders in path</param>
+        /// <returns>True if a Calc Library was selected, false if the browse dialog was cancelled</returns>
+        private static bool SelectCalcLibrary(IntPtr parentWindow, ref string libraryName, string dialogTitle = DefaultLibraryTitle,
+            bool saveLibrary = false, bool systemDirectories = true, bool userDirectories = true, bool usePlaceholders = true)
+        {
+            dynamic dlg = Activator.CreateInstance(Type.GetTypeFromProgID("DataLibraryCtrlLib.DialogDataLibraryOpen"));
+
+            dlg.Title = dialogTitle ?? DefaultLibraryTitle;
+            if (!string.IsNullOrEmpty(libraryName))
+                dlg.FilePath = libraryName;
+            dlg.Save = saveLibrary;
+            dlg.LookInSystemDirectory = systemDirectories;
+            dlg.LookInUserDirectory = userDirectories;
+            dlg.UsePlaceHolders = usePlaceholders;
+
+            if (dlg.Show() == DialogResultCancel)
+                return false;
+
+            libraryName = dlg.FilePath;
+            return true;
+        }
+
+        /// <summary>
+        /// Browse for a Calc Item in a given library.
+        /// </summary>
+        /// <param name="parentWindow">Parent window of the control</param>
+        /// <param name="libraryName">Name of Calc Library to browse items in</param>
+        /// <param name="itemName">Stores the name of the Calc Item</param>
+        /// <param name="dialogTitle">Title to show on browse dilaog</param>
+        /// <param name="saveItem">Bool specifying whether to save item</param>
+        /// <returns>True if a Calc Item was selected, false if the browse dialog was cancelled</returns>
+        private static bool SelectCalcItem(IntPtr parentWindow, string libraryName, ref string itemName, string dialogTitle = DefaultItemTitle, bool saveItem = false)
+        {
+            dynamic dlg = Activator.CreateInstance(Type.GetTypeFromProgID("DataLibraryCtrlLib.DialogDataItemOpen"));
+
+            dlg.Title = dialogTitle ?? DefaultItemTitle;
+            dlg.DataLibrary = libraryName;
+            if (!string.IsNullOrEmpty(itemName))
+                dlg.DataItem = itemName;
+            dlg.Save = saveItem;
+
+            if (dlg.Show() == DialogResultCancel)
+                return false;
+
+            itemName = dlg.DataItem;
+            return true;
+        }
+
+        /// <summary>
+        /// Checks whether the Calc Library with the specified name exists.
+        /// </summary>
+        /// <param name="name">Name of the Calc Library to check, including the system/user path placeholder</param>
+        /// <returns>True if the library exists, false if not</returns>
+        private bool DataLibraryExists(string name)
+        {
+            if (string.IsNullOrWhiteSpace(name))
+                return false;
+
+            dynamic libs = Activator.CreateInstance(Type.GetTypeFromProgID("DataLibraryLib.DataLibraries"));
+            if (name.StartsWith(UserPrefix))
+                libs.UserPath();
+            else
+                libs.SystemPath();
+            return libs.LibraryExists(name.Replace(SysPrefix, string.Empty).Replace(UserPrefix, string.Empty));
+        }
+
+        /// <summary>
+        /// Checks whether a Calc Item exists in a Calc Library, both specified by name
+        /// *NOTE: you must check the specified Calc Library exists before calling this method*
+        /// </summary>
+        /// <param name="library">Name of the Calc Library to check for the item in, including the system/user path placeholder</param>
+        /// <param name="item">Name of the Calc Item to check</param>
+        /// <returns>True if the item exists in the library, false if not</returns>
+        private bool DataItemExistsInLibrary(string library, string item)
+        {
+            if (string.IsNullOrWhiteSpace(item))
+                return false;
+
+            dynamic libs = Activator.CreateInstance(Type.GetTypeFromProgID("DataLibraryLib.DataLibraries"));
+            return libs.OpenLibrary(library).DataItems.ItemExists(item);
         }
 
         #endregion
@@ -217,6 +342,57 @@ namespace TeddsAPITester
                 InputVariablesFileName = fileDialog.FileName;
         }
         /// <summary>
+        /// Select calculation file button event handler. Browse for Calc Library.
+        /// </summary>
+        /// <param name="sender">Sender of event</param>
+        /// <param name="e">Event arguments</param>
+        private void OnSelectCalculationFileClick(object sender, RoutedEventArgs e)
+        {
+            IntPtr windowHandle = new WindowInteropHelper(this).Handle;
+            string selectedLibraryName = string.Empty;
+            if (SelectCalcLibrary(windowHandle, ref selectedLibraryName))
+            {
+                CalcFileName = selectedLibraryName;
+                if (DataLibraryExists(CalcFileName))
+                {
+                    //If calc item field doesn't already contain an item that exists in the selected library, open the item browse dialog
+                    if (!DataItemExistsInLibrary(CalcFileName, CalcItemName))
+                        SelectItemHelper();
+                }
+            }
+        }
+        /// <summary>
+        /// Select calculation item button event handler. Browse for Calc Item within a library.
+        /// </summary>
+        /// <param name="sender">Sender of event</param>
+        /// <param name="e">Event arguments</param>
+        private void OnSelectCalculationItemClick(object sender, RoutedEventArgs e)
+        {
+            if (DataLibraryExists(CalcFileName))
+            {
+                SelectItemHelper();
+            }
+            else
+            {
+                // If library field doesn't contain a valid Library, prompt user to pick one first (which prompts to pick an item in turn)
+                OnSelectCalculationFileClick(sender, e);
+                //If user still hasn't picked a valid library after prompt (i.e. cancelled), exit with a message
+                if (!DataLibraryExists(CalcFileName))
+                    MessageBox.Show("Please select a Calc Library before selecting an Item");
+            }
+        }
+        /// <summary>
+        /// Helper method to select Calc Item in "click" event handler and to allow selecting Calc Item without
+        /// re-checking that the Calc Library exists for cases where this check has already been done
+        /// </summary>
+        private void SelectItemHelper()
+        {
+            IntPtr windowHandle = new WindowInteropHelper(this).Handle;
+            string selectedItemName = string.Empty;
+            if (SelectCalcItem(windowHandle, CalcFileName, ref selectedItemName))
+                CalcItemName = selectedItemName;
+        }
+        /// <summary>
         /// Save output variables button event handler. 
         /// Browse for location to save calcualtion ouptut variables to as an xml file which can 
         /// be used as the input for a subsequent run of the calculation.
@@ -245,7 +421,6 @@ namespace TeddsAPITester
             if (saveDialog.ShowDialog(this) == true)
                 File.WriteAllText(saveDialog.FileName, OutputRtf);
         }
-
         #endregion
 
         #region "Settings"
@@ -391,6 +566,14 @@ namespace TeddsAPITester
         private const string OpenAllSuffix = "|All files (*.*)|*.*";
         private const string OpenXmlFilter = SaveXmlFilter + OpenAllSuffix;
 
-        #endregion       
+        private const int DialogResultCancel = 0;
+        private const string DefaultSetTitle = "Select Calc Set";
+        private const string DefaultLibraryTitle = "Select Calc Library";
+        private const string DefaultItemTitle = "Select Calc Item";
+
+        private const string SysPrefix = "$(SysLbrDir)";
+        private const string UserPrefix = "$(UserLbrDir)";
+
+        #endregion
     }
 }

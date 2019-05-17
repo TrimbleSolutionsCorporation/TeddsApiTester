@@ -27,12 +27,11 @@
                 <GroupBox Header="Input variables (xml)">
                     <StackPanel Margin="0,3,0,0" Orientation="Vertical">
                         <DockPanel>
-                            <TextBlock Text="File name" Width =" 80" DockPanel.Dock="Left"/>
+                            <TextBlock Text="File name" Width ="80" DockPanel.Dock="Left" VerticalAlignment="Center"/>
                             <Button Style="{StaticResource TrimbleBlueButton}" Content="..." DockPanel.Dock="Right"
                                    Width="{Binding Path=ActualHeight, RelativeSource={RelativeSource Self}}"
                                    Click="OnSelectInputVariablesFileClick"/>
-                            <TextBox Name="_inputVariablesFileNameTextBox" 
-                             Margin="0,2,4,2" VerticalAlignment="Top"/>
+                            <TextBox Name="_inputVariablesFileNameTextBox" Margin="0,2,4,2"/>
                         </DockPanel>
                     </StackPanel>
                 </GroupBox >
@@ -40,12 +39,18 @@
                 <GroupBox Header="Calculation (Calc Item)" Margin="0,5,0,0">
                     <StackPanel Margin="0,3,0,0" Orientation="Vertical">
                         <DockPanel>
-                            <TextBlock Text="File name" Width="80" DockPanel.Dock="Left" />
-                            <TextBox Name="_calcItemFileTextBox"/>
+                            <TextBlock Text="File name" Width="80" DockPanel.Dock="Left" VerticalAlignment="Center"/>
+                            <Button Style="{StaticResource TrimbleBlueButton}" Content="..." DockPanel.Dock="Right"
+                                    Width="{Binding Path=ActualHeight, RelativeSource={RelativeSource Self}}"
+                                    Click="OnSelectCalculationFileClick"/>
+                            <TextBox Name="_calcItemFileTextBox" Margin="0,2,4,2"/>
                         </DockPanel>
-                        <DockPanel Margin="0,7,0,0">
-                            <TextBlock Text="Item name" Width="80" DockPanel.Dock="Left" />
-                            <TextBox Name="_calcItemNameTextBox"/>
+                        <DockPanel Margin="0,6,0,0">
+                            <TextBlock Text="Item name" Width="80" DockPanel.Dock="Left" VerticalAlignment="Center"/>
+                            <Button Style="{StaticResource TrimbleBlueButton}" Content="..." DockPanel.Dock="Right"
+                                    Width="{Binding Path=ActualHeight, RelativeSource={RelativeSource Self}}"
+                                    Click="OnSelectCalculationItemClick"/>
+                            <TextBox Name="_calcItemNameTextBox" Margin="0,2,4,2"/>
                         </DockPanel>
                     </StackPanel>
                 </GroupBox>

@@ -5,6 +5,9 @@ Tedds API test application
 Tedds API Tester project is licensed under the FreeBSD license
 
 ## History
+### 2019 (21.0.2)
+* TEDDS-3604: Enhanced TeddsTesterAPI application to include a command to save the calculated output to PDF
+
 ### 2019 (21.0)
 * TEDDS-1254: Add browse buttons for selecting calc file and calc item in TeddsAPITester
 

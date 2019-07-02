@@ -84,10 +84,11 @@ namespace TeddsAPITester
         /// <param name="showUserInterface">Determines whether the user interface of the calcualtion is show or hidden.</param>
         /// <param name="outputVariablesXml">Returns all the calculated variables in the Tedds variables xml file format.</param>
         /// <param name="outputRtf">Returns the document output of the calculation in the RTF format.</param>
+        /// <param name="outputPdf">Returns the document output of the calculation in the PDF format.</param>
         public void Calculate(string inputVariablesXml, string calcFileName, string calcItemName,
-            bool showUserInterface, out string outputVariablesXml, out string outputRtf)
+            bool showUserInterface, out string outputVariablesXml, out string outputRtf, out string outputPdf)
         {
-            outputVariablesXml = outputRtf = null;
+            outputVariablesXml = outputRtf = outputPdf = null;
 
             //Create first calculator instance which is only required for retrieving RTF and getting modified input variables
             Calculator calculator = new Calculator();            
@@ -123,7 +124,8 @@ namespace TeddsAPITester
                 {
                     //Retrieve output
                     outputVariablesXml = calculator2.GetVariables();
-                    outputRtf = calculator2.GetOutput();
+                    outputRtf = calculator2.GetOutput(OutputFormat.Rtf);
+                    outputPdf = calculator2.GetOutput(OutputFormat.Pdf);
                 }
             }
             finally
@@ -285,10 +287,11 @@ namespace TeddsAPITester
                 string outputVariablesXml;
                 if (IsCreateOutputRtfEnabled)
                 {
-                    string outputRtf;
+                    string outputRtf, outputPdf;
                     Calculate(InputVariablesXml, CalcFileName, CalcItemNameEncoded,
-                        IsShowUserInterfaceEnabled, out outputVariablesXml, out outputRtf);
+                        IsShowUserInterfaceEnabled, out outputVariablesXml, out outputRtf, out outputPdf);
                     OutputRtf = outputRtf;
+                    OutputPdf = outputPdf;
                 }
                 else
                 {
@@ -408,7 +411,7 @@ namespace TeddsAPITester
                 File.WriteAllText(saveDialog.FileName, OutputVariablesXML);
         }
         /// <summary>
-        /// Save output RTF button event handler. Brose for location to save calculation output 
+        /// Save output RTF button event handler. Browse for location to save calculation output 
         /// text to as a Rich Text File (RTF).
         /// </summary>
         /// <param name="sender">Sender of event</param>
@@ -420,6 +423,25 @@ namespace TeddsAPITester
 
             if (saveDialog.ShowDialog(this) == true)
                 File.WriteAllText(saveDialog.FileName, OutputRtf);
+        }
+        /// <summary>
+        /// Save output PDF button event handler. Browse for location to save calculation output 
+        /// text to as a PDF File.
+        /// </summary>
+        /// <param name="sender">Sender of event</param>
+        /// <param name="e">Event arguments</param>
+        private void OnSaveAsOutputPdfClick(object sender, RoutedEventArgs e)
+        {
+            SaveFileDialog saveDialog = new SaveFileDialog()
+            { Filter = SavePdfFilter };
+
+            if (saveDialog.ShowDialog(this) == true)
+            {
+                //PDF is a binary file format so the string isn't actually a properly encoded string, therefore copy raw data
+                byte[] bytes = new byte[OutputPdf.Length * sizeof(char)];
+                System.Buffer.BlockCopy(OutputPdf.ToCharArray(), 0, bytes, 0, bytes.Length);                
+                File.WriteAllBytes(saveDialog.FileName, bytes);
+            }
         }
         #endregion
 
@@ -524,6 +546,10 @@ namespace TeddsAPITester
             }
         }
         /// <summary>
+        /// Document output from the last run of the calculation in the PDF format.
+        /// </summary>
+        public string OutputPdf { get; set; }
+        /// <summary>
         /// Status text which is used to feed back information to the user of the application
         /// </summary>
         public string StatusText
@@ -561,6 +587,7 @@ namespace TeddsAPITester
 
         private const string SaveXmlFilter = "XML file (*.xml)|*.xml";
         private const string SaveRtfFilter = "Rich Text Format (*.rtf)|*.rtf";
+        private const string SavePdfFilter = "PDF (*.pdf)|*.pdf";
         private const string SaveTedFilter = "Tedds Document (*.ted)|*.ted";
 
         private const string OpenAllSuffix = "|All files (*.*)|*.*";

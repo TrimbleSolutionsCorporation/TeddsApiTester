@@ -40,17 +40,23 @@ namespace TeddsAPITester
         /// Execute a calculation using the specified optional input variables and return only 
         /// the output variables xml. Omitting the RTF output when it is not needed will improve performance.
         /// </summary>
+        /// <param name="userName">If a Tekla online license is being used then this is the login user name for the Trimble Identity account to use.</param>
+        /// <param name="password">If a Tekla online license is being used then this is the login password for the Trimble Identity account to use</param>
         /// <param name="inputVariablesXml">Input variables for the calculation in the Tedds variables xml file format. Typically created as the output from a previous run of the calculation. Can be null or empty string.</param>
         /// <param name="calcFileName">Full path of the Calc Library file which contains the Calc Item to calculate.</param>
         /// <param name="calcItemName">Short name of the Calc Item to calculate.</param>
         /// <param name="showUserInterface">Determines whether the user interface of the calcualtion is show or hidden.</param>
         /// <param name="outputVariablesXml">Returns all the calculated variables in the Tedds variables xml file format.</param>
-        public void CalculateNoOutputRtf(string inputVariablesXml, string calcFileName, string calcItemName,
+        public void CalculateNoOutputRtf(string userName, string password, string inputVariablesXml, string calcFileName, string calcItemName,
             bool showUserInterface, out string outputVariablesXml)
         {
             //Create calculator instance and initialize with input
             Calculator calculator = new Calculator();
             User32Native.SetForegroundWindow((IntPtr)calculator.WindowHandle);
+
+            //If online license login is required then login
+            if (!(string.IsNullOrEmpty(userName) && string.IsNullOrEmpty(password)))
+                calculator.Login(userName, password);
 
             try
             {
@@ -78,6 +84,8 @@ namespace TeddsAPITester
         /// Execute a calculation using the specified optional input variables and return both 
         /// the output variables xml and the output document RTF.
         /// </summary>
+        /// <param name="userName">If a Tekla online license is being used then this is the login user name for the Trimble Identity account to use.</param>
+        /// <param name="password">If a Tekla online license is being used then this is the login password for the Trimble Identity account to use</param>
         /// <param name="inputVariablesXml">Input variables for the calculation in the Tedds variables xml file format. Typically created as the output from a previous run of the calculation. Can be null or empty string.</param>
         /// <param name="calcFileName">Full path of the Calc Library file which contains the Calc Item to calculate.</param>
         /// <param name="calcItemName">Short name of the Calc Item to calculate.</param>
@@ -85,13 +93,17 @@ namespace TeddsAPITester
         /// <param name="outputVariablesXml">Returns all the calculated variables in the Tedds variables xml file format.</param>
         /// <param name="outputRtf">Returns the document output of the calculation in the RTF format.</param>
         /// <param name="outputPdf">Returns the document output of the calculation in the PDF format.</param>
-        public void Calculate(string inputVariablesXml, string calcFileName, string calcItemName,
+        public void Calculate(string userName, string password, string inputVariablesXml, string calcFileName, string calcItemName,
             bool showUserInterface, out string outputVariablesXml, out string outputRtf, out string outputPdf)
         {
             outputVariablesXml = outputRtf = outputPdf = null;
 
             //Create first calculator instance which is only required for retrieving RTF and getting modified input variables
-            Calculator calculator = new Calculator();            
+            Calculator calculator = new Calculator();
+
+            //If online license login is required then login
+            if (!(string.IsNullOrEmpty(userName) && string.IsNullOrEmpty(password)))
+                calculator.Login(userName, password);
 
             if (!showUserInterface)
             {
@@ -288,14 +300,14 @@ namespace TeddsAPITester
                 if (IsCreateOutputRtfEnabled)
                 {
                     string outputRtf, outputPdf;
-                    Calculate(InputVariablesXml, CalcFileName, CalcItemNameEncoded,
+                    Calculate(UserName, Password, InputVariablesXml, CalcFileName, CalcItemNameEncoded,
                         IsShowUserInterfaceEnabled, out outputVariablesXml, out outputRtf, out outputPdf);
                     OutputRtf = outputRtf;
                     OutputPdf = outputPdf;
                 }
                 else
                 {
-                    CalculateNoOutputRtf(InputVariablesXml, CalcFileName, CalcItemNameEncoded,
+                    CalculateNoOutputRtf(UserName, Password, InputVariablesXml, CalcFileName, CalcItemNameEncoded,
                         IsShowUserInterfaceEnabled, out outputVariablesXml);
                 }
                 OutputVariablesXML = outputVariablesXml;
@@ -485,6 +497,16 @@ namespace TeddsAPITester
         #endregion
 
         #region "Properties"
+        /// <summary>
+        /// Login user name for the Trimble Identity account to use
+        /// </summary>
+        public string UserName =>
+            _userNameTextBox.Text;
+        /// <summary>
+        /// Login password for the Trimble Identity account to use
+        /// </summary>
+        public string Password =>
+            _passwordTextBox.Password;
 
         /// <summary>
         /// Full path of input variables xml file

@@ -61,10 +61,23 @@
                         <CheckBox Name="_createOutputRtfCheckBox" Content="Create output (rtf)" Margin="0,0,7,0" IsChecked="True"/>
                     </StackPanel>
                 </GroupBox>
+
+                <GroupBox Header="Tekla Online License Login" Margin="0,20,0,0">
+                    <StackPanel Margin="0,3,0,0" Orientation="Vertical">
+                        <DockPanel>
+                            <TextBlock Text="User name" Width ="80" DockPanel.Dock="Left" VerticalAlignment="Center"/>
+                            <TextBox Name="_userNameTextBox"  Margin="0,2,4,2"/>
+                        </DockPanel>
+                        <DockPanel>
+                            <TextBlock Text="Password" Width ="80" DockPanel.Dock="Left" VerticalAlignment="Center"/>
+                            <PasswordBox Name="_passwordTextBox"  Margin="0,2,4,2"/>
+                        </DockPanel>
+                    </StackPanel>
+                </GroupBox>
             </StackPanel>
 
             <StackPanel Grid.Column="1" Margin="0,0,0,0">
-                <GroupBox Header="Output variables (xml)" Height="166" >
+                <GroupBox Header="Output variables (xml)" Height="266" >
                     <DockPanel Margin="0,3,0,0" >
                         <Button Content="Save As..." Width="150" DockPanel.Dock="Bottom" HorizontalAlignment="Right" Margin="0,7,0,0"
                                 Click="OnSaveAsOutputVariablesXmlClick"
@@ -104,6 +117,9 @@
             </DockPanel>
         </StackPanel>
 
+
+        
+
         <GroupBox Header="Output (Rich Text Format)" Margin="0,20,0,0">
             <DockPanel Margin="0,3,0,0">                
                 <RichTextBox Name="_outputRtfRichTextBox" 
@@ -111,6 +127,6 @@
                              VerticalScrollBarVisibility="Visible" Margin="0,0,0,0"/>
             </DockPanel>
         </GroupBox>
-
+        
     </DockPanel>
 </Window>

@@ -5,6 +5,9 @@ Tedds API test application
 Tedds API Tester project is licensed under the FreeBSD license
 
 ## History
+### 2020 (22.0)
+* TEDDS-4098: Enhance Tedds API Tester application to include option to enter login credentials for online license usage
+
 ### 2019 (21.0.2)
 * TEDDS-3604: Enhanced TeddsTesterAPI application to include a command to save the calculated output to PDF
 

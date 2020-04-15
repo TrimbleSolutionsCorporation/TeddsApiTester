@@ -42,13 +42,13 @@ namespace TeddsAPITester
         /// </summary>
         /// <param name="userName">If a Tekla online license is being used then this is the login user name for the Trimble Identity account to use.</param>
         /// <param name="password">If a Tekla online license is being used then this is the login password for the Trimble Identity account to use</param>
-        /// <param name="inputVariablesXml">Input variables for the calculation in the Tedds variables xml file format. Typically created as the output from a previous run of the calculation. Can be null or empty string.</param>
+        /// <param name="inputVariablesXml">Input variables for the calculation in the Tedds variables xml file format.
+        /// Typically created as the output from a previous run of the calculation. Can be null or empty string.</param>
         /// <param name="calcFileName">Full path of the Calc Library file which contains the Calc Item to calculate.</param>
         /// <param name="calcItemName">Short name of the Calc Item to calculate.</param>
         /// <param name="showUserInterface">Determines whether the user interface of the calcualtion is show or hidden.</param>
-        /// <param name="outputVariablesXml">Returns all the calculated variables in the Tedds variables xml file format.</param>
-        public void CalculateNoOutputRtf(string userName, string password, string inputVariablesXml, string calcFileName, string calcItemName,
-            bool showUserInterface, out string outputVariablesXml)
+        /// <returns>Returns all the calculated variables in the Tedds variables xml file format.</returns>
+        public string CalculateNoOutputRtf(string userName, string password, string inputVariablesXml, string calcFileName, string calcItemName, bool showUserInterface)
         {
             //Create calculator instance and initialize with input
             Calculator calculator = new Calculator();
@@ -71,7 +71,7 @@ namespace TeddsAPITester
                 calculator.Functions.Eval($"EvalCalcItem( \"{calcFileName}\", \"{calcItemName}\" )");
 
                 //Get output variables
-                outputVariablesXml = calculator.GetVariables();
+                return calculator.GetVariables();
             }
             finally
             {
@@ -86,7 +86,8 @@ namespace TeddsAPITester
         /// </summary>
         /// <param name="userName">If a Tekla online license is being used then this is the login user name for the Trimble Identity account to use.</param>
         /// <param name="password">If a Tekla online license is being used then this is the login password for the Trimble Identity account to use</param>
-        /// <param name="inputVariablesXml">Input variables for the calculation in the Tedds variables xml file format. Typically created as the output from a previous run of the calculation. Can be null or empty string.</param>
+        /// <param name="inputVariablesXml">Input variables for the calculation in the Tedds variables xml file format.
+        /// Typically created as the output from a previous run of the calculation. Can be null or empty string.</param>
         /// <param name="calcFileName">Full path of the Calc Library file which contains the Calc Item to calculate.</param>
         /// <param name="calcItemName">Short name of the Calc Item to calculate.</param>
         /// <param name="showUserInterface">Determines whether the user interface of the calcualtion is show or hidden.</param>
@@ -161,7 +162,7 @@ namespace TeddsAPITester
         /// <param name="calcItemName">Name of Calc Item where calculation is stored</param>
         /// <param name="outputVariablesXML">Output variables xml</param>
         /// <param name="outputRtf">Output RTF</param>
-        public void SaveTeddsDocument(string fileName, string calcFileName, string calcItemName, string outputVariablesXML, string outputRtf)
+        public static void SaveTeddsDocument(string fileName, string calcFileName, string calcItemName, string outputVariablesXML, string outputRtf)
         {
             byte[] documentTemplateResource = Properties.Resources.DocumentTemplate;
             string document = Encoding.UTF8.GetString(documentTemplateResource, 0, documentTemplateResource.Length);
@@ -240,7 +241,7 @@ namespace TeddsAPITester
         /// </summary>
         /// <param name="name">Name of the Calc Library to check, including the system/user path placeholder</param>
         /// <returns>True if the library exists, false if not</returns>
-        private bool DataLibraryExists(string name)
+        private static bool DataLibraryExists(string name)
         {
             if (string.IsNullOrWhiteSpace(name))
                 return false;
@@ -260,7 +261,7 @@ namespace TeddsAPITester
         /// <param name="library">Name of the Calc Library to check for the item in, including the system/user path placeholder</param>
         /// <param name="item">Name of the Calc Item to check</param>
         /// <returns>True if the item exists in the library, false if not</returns>
-        private bool DataItemExistsInLibrary(string library, string item)
+        private static bool DataItemExistsInLibrary(string library, string item)
         {
             if (string.IsNullOrWhiteSpace(item))
                 return false;
@@ -293,24 +294,23 @@ namespace TeddsAPITester
             }
 
             StatusText = $"Started calculating {CalcItemName}...";
-            OutputRtf = OutputVariablesXML = null;
+            OutputRtf = OutputVariablesXml = null;
             try
             {
                 string outputVariablesXml;
                 if (IsCreateOutputRtfEnabled)
                 {
-                    string outputRtf, outputPdf;
                     Calculate(UserName, Password, InputVariablesXml, CalcFileName, CalcItemNameEncoded,
-                        IsShowUserInterfaceEnabled, out outputVariablesXml, out outputRtf, out outputPdf);
+                        IsShowUserInterfaceEnabled, out outputVariablesXml, out string outputRtf, out string outputPdf);
                     OutputRtf = outputRtf;
                     OutputPdf = outputPdf;
                 }
                 else
                 {
-                    CalculateNoOutputRtf(UserName, Password, InputVariablesXml, CalcFileName, CalcItemNameEncoded,
-                        IsShowUserInterfaceEnabled, out outputVariablesXml);
+                    outputVariablesXml = CalculateNoOutputRtf(UserName, Password, InputVariablesXml, CalcFileName, CalcItemNameEncoded,
+                        IsShowUserInterfaceEnabled);
                 }
-                OutputVariablesXML = outputVariablesXml;
+                OutputVariablesXml = outputVariablesXml;
                 StatusText = "...finished Calculating";
             }
             catch (COMException ex)
@@ -325,11 +325,11 @@ namespace TeddsAPITester
         /// <param name="e">Event arguments</param>
         private void OnSaveAsTeddsDocumentButtonClick(object sender, RoutedEventArgs e)
         {
-            SaveFileDialog saveDialog = new SaveFileDialog()
+            SaveFileDialog saveDialog = new SaveFileDialog
             { Filter = SaveTedFilter };
 
             if (saveDialog.ShowDialog(this) == true)
-                SaveTeddsDocument(saveDialog.FileName, CalcFileName, CalcItemName, OutputVariablesXML, OutputRtf);
+                SaveTeddsDocument(saveDialog.FileName, CalcFileName, CalcItemName, OutputVariablesXml, OutputRtf);
         }
         /// <summary>
         /// Exit button event handler
@@ -347,7 +347,7 @@ namespace TeddsAPITester
         /// <param name="e">Event arguments</param>
         private void OnSelectInputVariablesFileClick(object sender, RoutedEventArgs e)
         {
-            OpenFileDialog fileDialog = new OpenFileDialog()
+            OpenFileDialog fileDialog = new OpenFileDialog
             {
                 FileName = InputVariablesFileName,
                 Filter = OpenXmlFilter
@@ -416,11 +416,11 @@ namespace TeddsAPITester
         /// <param name="e">Event arguments</param>
         private void OnSaveAsOutputVariablesXmlClick(object sender, RoutedEventArgs e)
         {
-            SaveFileDialog saveDialog = new SaveFileDialog()
+            SaveFileDialog saveDialog = new SaveFileDialog
             { Filter = SaveXmlFilter };
 
             if (saveDialog.ShowDialog(this) == true)
-                File.WriteAllText(saveDialog.FileName, OutputVariablesXML);
+                File.WriteAllText(saveDialog.FileName, OutputVariablesXml);
         }
         /// <summary>
         /// Save output RTF button event handler. Browse for location to save calculation output 
@@ -430,7 +430,7 @@ namespace TeddsAPITester
         /// <param name="e">Event arguments</param>
         private void OnSaveAsOutputRtfClick(object sender, RoutedEventArgs e)
         {
-            SaveFileDialog saveDialog = new SaveFileDialog()
+            SaveFileDialog saveDialog = new SaveFileDialog
             { Filter = SaveRtfFilter };
 
             if (saveDialog.ShowDialog(this) == true)
@@ -444,14 +444,14 @@ namespace TeddsAPITester
         /// <param name="e">Event arguments</param>
         private void OnSaveAsOutputPdfClick(object sender, RoutedEventArgs e)
         {
-            SaveFileDialog saveDialog = new SaveFileDialog()
+            SaveFileDialog saveDialog = new SaveFileDialog
             { Filter = SavePdfFilter };
 
             if (saveDialog.ShowDialog(this) == true)
             {
                 //PDF is a binary file format so the string isn't actually a properly encoded string, therefore copy raw data
                 byte[] bytes = new byte[OutputPdf.Length * sizeof(char)];
-                System.Buffer.BlockCopy(OutputPdf.ToCharArray(), 0, bytes, 0, bytes.Length);                
+                Buffer.BlockCopy(OutputPdf.ToCharArray(), 0, bytes, 0, bytes.Length);                
                 File.WriteAllBytes(saveDialog.FileName, bytes);
             }
         }
@@ -546,7 +546,7 @@ namespace TeddsAPITester
         /// <summary>
         /// Output variables from the last run of the calculation in the Tedds variables xml file format.
         /// </summary>
-        public string OutputVariablesXML
+        public string OutputVariablesXml
         {
             get { return _outputVariablesTextBox.Text; }
             set { _outputVariablesTextBox.Text = value; }
@@ -560,7 +560,8 @@ namespace TeddsAPITester
             set
             {
                 _outputRtfRichTextBox.Document.Blocks.Clear();
-                if (!string.IsNullOrEmpty(_outputRtf = value))
+                _outputRtf = value;
+                if (!string.IsNullOrEmpty(_outputRtf))
                 {
                     using (MemoryStream stream = new MemoryStream(Encoding.UTF8.GetBytes(value)))
                         _outputRtfRichTextBox.Selection.Load(stream, DataFormats.Rtf);

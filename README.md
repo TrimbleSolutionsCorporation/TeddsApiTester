@@ -5,6 +5,9 @@ Tedds API test application
 Tedds API Tester project is licensed under the FreeBSD license
 
 ## History
+### 2020 (22.1)
+* TeddsApiTester#1: Pass parent window handle to library and item dialogs
+
 ### 2020 (22.0)
 * TEDDS-4098: Enhance Tedds API Tester application to include option to enter login credentials for online license usage
 

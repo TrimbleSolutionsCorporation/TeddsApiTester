@@ -201,6 +201,7 @@ namespace TeddsAPITester
             dlg.Save = saveLibrary;
             dlg.LookInSystemDirectory = systemDirectories;
             dlg.LookInUserDirectory = userDirectories;
+            dlg.ParentWindow = parentWindow;
             dlg.UsePlaceHolders = usePlaceholders;
 
             if (dlg.Show() == DialogResultCancel)
@@ -227,6 +228,7 @@ namespace TeddsAPITester
             dlg.DataLibrary = libraryName;
             if (!string.IsNullOrEmpty(itemName))
                 dlg.DataItem = itemName;
+            dlg.ParentWindow = parentWindow;
             dlg.Save = saveItem;
 
             if (dlg.Show() == DialogResultCancel)

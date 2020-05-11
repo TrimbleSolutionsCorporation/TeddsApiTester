@@ -6,6 +6,7 @@ Tedds API Tester project is licensed under the FreeBSD license
 
 ## History
 ### 2020 (22.1)
+* TeddsApiTester#2: Use Tedds application to create .ted documents
 * TeddsApiTester#1: Pass parent window handle to library and item dialogs
 
 ### 2020 (22.0)

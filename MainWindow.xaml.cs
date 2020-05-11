@@ -8,7 +8,10 @@ using System.Windows.Interop;
 
 using Microsoft.Win32;
 
+using Tekla.Structural.InteropAssemblies.Tedds;
 using Tekla.Structural.InteropAssemblies.TeddsCalc;
+
+using Application = Tekla.Structural.InteropAssemblies.Tedds.Application;
 
 namespace TeddsAPITester
 {
@@ -153,26 +156,37 @@ namespace TeddsAPITester
         #region "Document serialization methods"
 
         /// <summary>
-        /// Using a template for an empty .ted Tedds document file insert the calculation details, variables and output RTF in to that template
-        /// and save the result as a .ted document which can be opened in the Tedds applciation directly or imported into Tedds for Word.
-        /// 
+        /// Using the Tedds application create a Tedds (.ted) document which can be opened in the Tedds application directly or imported into Tedds for Word.
         /// </summary>
         /// <param name="fileName">Output file name</param>
         /// <param name="calcFileName">Name of Calc Library file where calculation is stored</param>
         /// <param name="calcItemName">Name of Calc Item where calculation is stored</param>
         /// <param name="outputVariablesXML">Output variables xml</param>
         /// <param name="outputRtf">Output RTF</param>
-        public static void SaveTeddsDocument(string fileName, string calcFileName, string calcItemName, string outputVariablesXML, string outputRtf)
+        public void SaveTeddsDocument(string fileName, string calcFileName, string calcItemName, string outputVariablesXML, string outputRtf)
         {
-            byte[] documentTemplateResource = Properties.Resources.DocumentTemplate;
-            string document = Encoding.UTF8.GetString(documentTemplateResource, 0, documentTemplateResource.Length);
-            document = document
-                .Replace("[[CALCFILENAME]]", calcFileName)
-                .Replace("[[CALCITEMNAME]]", calcItemName)
-                .Replace("[[VARIABLES]]", outputVariablesXML)
-                .Replace("[[OUTPUT]]", outputRtf);
-
-            File.WriteAllText(fileName, document);
+            IApplication application = null;
+            ITeddsDocuments documents = null;
+            try
+            {
+                application = new Application();
+                documents = application.Documents;
+                ITeddsDocument document = documents.Add3(Path.GetFileName(fileName), calcFileName, calcItemName, outputVariablesXML, outputRtf);
+                document.SaveAs(fileName);
+                document.Close();
+                StatusText = "Tedds document created";
+            }
+            catch (COMException ex)
+            {
+                StatusText = $"Exception occured: {ex.Message}";
+            }
+            finally
+            {
+                if (documents != null)
+                    Marshal.ReleaseComObject(documents);
+                if (application != null)
+                    Marshal.ReleaseComObject(application);
+            }
         }
 
         #endregion

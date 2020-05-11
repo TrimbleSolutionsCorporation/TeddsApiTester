@@ -50,8 +50,12 @@
     <Reference Include="System.Xaml">
       <RequiredTargetFramework>4.0</RequiredTargetFramework>
     </Reference>
-    <Reference Include="Tedds.TeddsCalcIA">
-      <HintPath>$(SolutionDir)\packages\TeklaTeddsAPI.22.0.0\lib\net\Tedds.TeddsCalcIA.dll</HintPath>
+    <Reference Include="Tedds.TeddsCalcIA, Version=22.1.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>$(SolutionDir)\packages\TeklaTeddsAPI.22.1.0\lib\net\Tedds.TeddsCalcIA.dll</HintPath>
+      <EmbedInteropTypes>True</EmbedInteropTypes>
+    </Reference>
+    <Reference Include="Tedds.TeddsIA, Version=22.1.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>$(SolutionDir)\packages\TeklaTeddsAPI.22.1.0\lib\net\Tedds.TeddsIA.dll</HintPath>
       <EmbedInteropTypes>True</EmbedInteropTypes>
     </Reference>
     <Reference Include="WindowsBase" />
@@ -85,22 +89,12 @@
     <Compile Include="Properties\AssemblyInfo.cs">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="Properties\Resources.Designer.cs">
-      <AutoGen>True</AutoGen>
-      <DesignTime>True</DesignTime>
-      <DependentUpon>Resources.resx</DependentUpon>
-    </Compile>
     <Compile Include="Properties\Settings.Designer.cs">
       <AutoGen>True</AutoGen>
       <DependentUpon>Settings.settings</DependentUpon>
       <DesignTimeSharedInput>True</DesignTimeSharedInput>
     </Compile>
-    <EmbeddedResource Include="Properties\Resources.resx">
-      <Generator>ResXFileCodeGenerator</Generator>
-      <LastGenOutput>Resources.Designer.cs</LastGenOutput>
-    </EmbeddedResource>
     <None Include="packages.config" />
-    <None Include="DocumentTemplate.ted" />
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
       <LastGenOutput>Settings.Designer.cs</LastGenOutput>
@@ -115,9 +109,11 @@
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
-    <PostBuildEvent>echo Copy to Tedds dir
-copy "$(TargetPath)" "$(TeddsPath)"
-copy "$(TargetPath).config" "$(TeddsPath)"</PostBuildEvent>
+    <PostBuildEvent>if not "$(TeddsPath)"=="" if exist "$(TeddsPath)" (
+	echo Copy to Tedds dir
+	copy "$(TargetPath)" "$(TeddsPath)"
+	copy "$(TargetPath).config" "$(TeddsPath)"
+)</PostBuildEvent>
   </PropertyGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

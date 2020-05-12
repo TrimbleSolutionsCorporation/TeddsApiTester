@@ -80,6 +80,8 @@
                 <GroupBox Header="Output variables (xml)" Height="266" >
                     <DockPanel Margin="0,3,0,0" >
                         <Button Content="Save As..." Width="150" DockPanel.Dock="Bottom" HorizontalAlignment="Right" Margin="0,7,0,0"
+                                Name="_buttonSaveAsVariables"
+                                IsEnabled="False"
                                 Click="OnSaveAsOutputVariablesXmlClick"
                                 VerticalAlignment="Top"/>
                         <TextBox Name="_outputVariablesTextBox" IsReadOnly="True"
@@ -96,17 +98,23 @@
                             Width="150" DockPanel.Dock="Right" 
                             Click="OnCalculateButtonClick" IsDefault="True"/>
                 <Button Margin="7,0,0,0" Content="Save As Tedds (.ted)..."
-                    HorizontalAlignment="Right"
-                            Width="150" DockPanel.Dock="Right" 
-                            Click="OnSaveAsTeddsDocumentButtonClick"/>
+                        Name="_buttonSaveAsTed"
+                        IsEnabled="False"
+                        HorizontalAlignment="Right"
+                        Width="150" DockPanel.Dock="Right" 
+                        Click="OnSaveAsTeddsDocumentButtonClick"/>
                 <Button Margin="7,0,0,0" Content="Save As PDF..."
-                    HorizontalAlignment="Right"
-                            Width="150" DockPanel.Dock="Right" 
-                            Click="OnSaveAsOutputPdfClick"/>
+                        Name="_buttonSaveAsPdf"
+                        IsEnabled="False"
+                        HorizontalAlignment="Right"
+                        Width="150" DockPanel.Dock="Right" 
+                        Click="OnSaveAsOutputPdfClick"/>
                 <Button Margin="7,0,0,0" Content="Save As RTF..."
-                    HorizontalAlignment="Right"
-                            Width="150" DockPanel.Dock="Right" 
-                            Click="OnSaveAsOutputRtfClick"/>                
+                        Name="_buttonSaveAsRtf"
+                        IsEnabled="False"
+                        HorizontalAlignment="Right"
+                        Width="150" DockPanel.Dock="Right" 
+                        Click="OnSaveAsOutputRtfClick"/>
             </DockPanel>
             <DockPanel Height="44">
                 <Button Content="Exit" DockPanel.Dock="Right"

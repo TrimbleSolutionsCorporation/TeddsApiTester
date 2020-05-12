@@ -604,7 +604,11 @@ namespace TeddsAPITester
         public string OutputVariablesXml
         {
             get { return _outputVariablesTextBox.Text; }
-            set { _outputVariablesTextBox.Text = value; }
+            set
+            {
+                _outputVariablesTextBox.Text = value;
+                _buttonSaveAsVariables.IsEnabled = !string.IsNullOrEmpty(OutputVariablesXml);
+            }
         }
         /// <summary>
         /// Document output from the last run of the calculation in the RTF format.
@@ -621,6 +625,10 @@ namespace TeddsAPITester
                     using (MemoryStream stream = new MemoryStream(Encoding.UTF8.GetBytes(value)))
                         _outputRtfRichTextBox.Selection.Load(stream, DataFormats.Rtf);
                 }
+
+                //Enable/Disable SaveAs buttons
+                _buttonSaveAsRtf.IsEnabled = _buttonSaveAsPdf.IsEnabled =
+                    _buttonSaveAsTed.IsEnabled = !string.IsNullOrEmpty(_outputRtf);
             }
         }
         /// <summary>

@@ -1,4 +1,6 @@
-﻿using System;
+﻿#define SavePdfViaTeddsApplication
+
+using System;
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Text;
@@ -159,22 +161,52 @@ namespace TeddsAPITester
         /// Using the Tedds application create a Tedds (.ted) document which can be opened in the Tedds application directly or imported into Tedds for Word.
         /// </summary>
         /// <param name="fileName">Output file name</param>
-        /// <param name="calcFileName">Name of Calc Library file where calculation is stored</param>
-        /// <param name="calcItemName">Name of Calc Item where calculation is stored</param>
-        /// <param name="outputVariablesXML">Output variables xml</param>
-        /// <param name="outputRtf">Output RTF</param>
-        public void SaveTeddsDocument(string fileName, string calcFileName, string calcItemName, string outputVariablesXML, string outputRtf)
+        public void SaveTeddsDocument(string fileName)
+        {
+            SaveWithTedds(fileName, document => document.SaveAs(fileName));
+        }
+        /// <summary>
+        /// Using the Tedds application create a pdf file.
+        /// </summary>
+        /// <param name="fileName">Output file name</param>
+        public void SaveTeddsPdf(string fileName)
+        {
+            SaveWithTedds(fileName, document => document.SaveAsPdf(fileName));
+        }
+        /// <summary>
+        /// Using the Tedds application, create a document with the given filename.
+        /// Then perform the provided action with the tedds document.
+        /// </summary>
+        /// <param name="fileName">File name</param>
+        /// <param name="saver">Action to perform with the created Tedds document</param>
+        private void SaveWithTedds(string fileName, Action<ITeddsDocument> saver)
         {
             IApplication application = null;
             ITeddsDocuments documents = null;
+            ITeddsDocument document = null;
             try
             {
+                //Launch Tedds application, or get hold of an already running instance
                 application = new Application();
+#if DEBUG
+                //If Tedds was not already running, make it visible for debugging purposes
+                application.Visible = true;
+#endif
+
                 documents = application.Documents;
-                ITeddsDocument document = documents.Add3(Path.GetFileName(fileName), calcFileName, calcItemName, outputVariablesXML, outputRtf);
-                document.SaveAs(fileName);
-                document.Close();
-                StatusText = "Tedds document created";
+                //Create a new Tedds document
+                document = documents.Add3(Path.GetFileNameWithoutExtension(fileName), CalcFileName, CalcItemName, OutputVariablesXml, OutputRtf);
+                //Perform the given save action on the document
+                saver(document);
+
+                if (!application.Visible)
+                {
+                    document.Close(false);
+                    //Once the document has been closed this reference is no longer valid and does not need to be freed later
+                    document = null;
+                }
+
+                StatusText = "Tedds document created successfully";
             }
             catch (COMException ex)
             {
@@ -182,6 +214,9 @@ namespace TeddsAPITester
             }
             finally
             {
+                //Release objects to close down Tedds application
+                if (document != null)
+                    Marshal.ReleaseComObject(document);
                 if (documents != null)
                     Marshal.ReleaseComObject(documents);
                 if (application != null)
@@ -345,7 +380,7 @@ namespace TeddsAPITester
             { Filter = SaveTedFilter };
 
             if (saveDialog.ShowDialog(this) == true)
-                SaveTeddsDocument(saveDialog.FileName, CalcFileName, CalcItemName, OutputVariablesXml, OutputRtf);
+                SaveTeddsDocument(saveDialog.FileName);
         }
         /// <summary>
         /// Exit button event handler
@@ -465,10 +500,14 @@ namespace TeddsAPITester
 
             if (saveDialog.ShowDialog(this) == true)
             {
+#if SavePdfViaTeddsApplication
+                SaveTeddsPdf(saveDialog.FileName);
+#else
                 //PDF is a binary file format so the string isn't actually a properly encoded string, therefore copy raw data
                 byte[] bytes = new byte[OutputPdf.Length * sizeof(char)];
-                Buffer.BlockCopy(OutputPdf.ToCharArray(), 0, bytes, 0, bytes.Length);                
+                Buffer.BlockCopy(OutputPdf.ToCharArray(), 0, bytes, 0, bytes.Length);
                 File.WriteAllBytes(saveDialog.FileName, bytes);
+#endif
             }
         }
         #endregion

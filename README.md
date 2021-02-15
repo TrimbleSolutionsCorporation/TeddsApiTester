@@ -5,6 +5,9 @@ Tedds API test application
 Tedds API Tester project is licensed under the FreeBSD license
 
 ## History
+### 2021 (23.0)
+* TeddsApiTester#3: Enhance tester application to demonstrate listening to Progress, UndefinedVariable and Error events
+
 ### 2020 (22.2)
 * Update to Tekla Tedds API 22.2 nuget (2020 SP2)
 

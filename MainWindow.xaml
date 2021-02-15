@@ -3,9 +3,9 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        mc:Ignorable="d" MinHeight="500" MinWidth="600"
+        mc:Ignorable="d" MinHeight="600" MinWidth="675"
         Title="Tedds API tester" Icon="TeddsAPI.ico"
-        Height="500" Width="800" WindowStartupLocation="CenterScreen"
+        Height="545" Width="800" WindowStartupLocation="CenterScreen"
         Style="{DynamicResource TrimbleGrayWindow}">
 
     <Window.Resources>
@@ -62,6 +62,14 @@
                     </StackPanel>
                 </GroupBox>
 
+                <GroupBox Header="Events" Height="45" Margin="0,5,0,0">
+                    <StackPanel Orientation="Horizontal" Margin="0,3,3,3">
+                        <CheckBox Name="_enableCalculatingProgressEvents" Content="Calculation progress" Margin="0,0,7,0" IsChecked="False"/>
+                        <CheckBox Name="_enableUndefinedVariableEvents" Content="Undefined variable" Margin="0,0,7,0" IsChecked="False"/>
+                        <CheckBox Name="_enableErrorEvents" Content="Errors" Margin="0,0,7,0" IsChecked="False"/>
+                    </StackPanel>
+                </GroupBox>
+
                 <GroupBox Header="Tekla Online License Login" Margin="0,20,0,0">
                     <StackPanel Margin="0,3,0,0" Orientation="Vertical">
                         <DockPanel>
@@ -77,7 +85,7 @@
             </StackPanel>
 
             <StackPanel Grid.Column="1" Margin="0,0,0,0">
-                <GroupBox Header="Output variables (xml)" Height="266" >
+                <GroupBox Header="Output variables (xml)" Height="301   " >
                     <DockPanel Margin="0,3,0,0" >
                         <Button Content="Save As..." Width="150" DockPanel.Dock="Bottom" HorizontalAlignment="Right" Margin="0,7,0,0"
                                 Name="_buttonSaveAsVariables"
@@ -121,12 +129,10 @@
                     Width="150"
                     HorizontalAlignment="Right"
                     Click="OnExitButtonClick" IsCancel="True"/>
-                <TextBlock Name="_statusTextLabel" VerticalAlignment="Center"/>
+                <ProgressBar Name="_progressBar" DockPanel.Dock="Right" Width="150"  Margin="0,10,7,10" Visibility="Hidden"/>
+                <TextBlock Name="_statusTextLabel" DockPanel.Dock="Left" Margin="0,10,7,10"/>
             </DockPanel>
         </StackPanel>
-
-
-        
 
         <GroupBox Header="Output (Rich Text Format)" Margin="0,20,0,0">
             <DockPanel Margin="0,3,0,0">                

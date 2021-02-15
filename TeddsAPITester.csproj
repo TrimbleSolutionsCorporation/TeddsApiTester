@@ -50,12 +50,12 @@
     <Reference Include="System.Xaml">
       <RequiredTargetFramework>4.0</RequiredTargetFramework>
     </Reference>
-    <Reference Include="Tedds.TeddsCalcIA, Version=22.2.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>$(SolutionDir)\packages\TeklaTeddsAPI.22.2.0\lib\net\Tedds.TeddsCalcIA.dll</HintPath>
+    <Reference Include="Tedds.TeddsCalcIA, Version=23.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>$(SolutionDir)\packages\TeklaTeddsAPI.23.0.0\lib\net\Tedds.TeddsCalcIA.dll</HintPath>
       <EmbedInteropTypes>True</EmbedInteropTypes>
     </Reference>
-    <Reference Include="Tedds.TeddsIA, Version=22.2.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>$(SolutionDir)\packages\TeklaTeddsAPI.22.2.0\lib\net\Tedds.TeddsIA.dll</HintPath>
+    <Reference Include="Tedds.TeddsIA, Version=23.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>$(SolutionDir)\packages\TeklaTeddsAPI.23.0.0\lib\net\Tedds.TeddsIA.dll</HintPath>
       <EmbedInteropTypes>True</EmbedInteropTypes>
     </Reference>
     <Reference Include="WindowsBase" />
@@ -67,6 +67,9 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="SimpleInputDialog.xaml.cs">
+      <DependentUpon>SimpleInputDialog.xaml</DependentUpon>
+    </Compile>
     <Compile Include="User32Native.cs" />
     <Page Include="MainWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
@@ -80,6 +83,10 @@
       <DependentUpon>MainWindow.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
+    <Page Include="SimpleInputDialog.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="TrimbleTheme.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>

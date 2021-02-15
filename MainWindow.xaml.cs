@@ -7,6 +7,7 @@ using System.Text;
 using System.Windows;
 using System.Windows.Threading;
 using System.Windows.Interop;
+using System.Threading.Tasks;
 
 using Microsoft.Win32;
 
@@ -18,12 +19,41 @@ using Application = Tekla.Structural.InteropAssemblies.Tedds.Application;
 namespace TeddsAPITester
 {
     /// <summary>
+    /// Structure of the input and output data required for calculating
+    /// </summary>
+    public class CalculationData
+    {
+        /// <summary>Instance variable <c>ShowUserInterface</c> determines whether the user interface of the calculation is show or hidden.</summary>
+        public bool ShowUserInterface { get; set; }
+        /// <summary>Instance variable <c>CreateOutputRtf</c> determines whether output is required.</summary>
+        public bool CreateOutputRtf { get; set; }
+        /// <summary>Instance variable <c>CalculatingProgressEvents</c> determines whether to listen for calculation progress events.</summary>
+        public bool CalculatingProgressEvents { get; set; }
+        /// <summary>Instance variable <c>UndefinedVariableEvents</c> determines whether to listen for undefined variable events.</summary>
+        public bool UndefinedVariableEvents { get; set; }
+        /// <summary>Instance variable <c>ErrorEvents</c> determines whether to listen to error events.</summary>
+        public bool ErrorEvents { get; set; }
+        /// <summary>Instance variable <c>InputVariablesXml</c> which represents the input variables for the calculation in the Tedds variables XML file format.</summary>
+        public string InputVariablesXml { get; set; }
+        /// <summary>Instance variable <c>CalcFileName</c> full path of the Calc Library file which contains the Calc Item to calculate.</summary>
+        public string CalcFileName { get; set; }
+        /// <summary>Instance variable <c>CalcItemName</c> short name of the Calc Item to calculate.</summary>
+        public string CalcItemName { get; set; }
+        /// <summary>Instance variable <c>OutputVariablesXml</c> which is the output variables of a calculation in the Tedds variables XML file format</summary>
+        public string OutputVariablesXml { get; set; }
+        /// <summary>Instance variable <c>OutputRtf</c></summary>
+        public string OutputRtf { get; set; }
+        /// <summary>Instance variable <c>OutputPdf</c> which is the output of a calculation in PDF format.</summary>
+        public string OutputPdf { get; set; }
+    }
+
+    /// <summary>
     /// The Tedds API Tester is designed for testing or learning how to use the Tedds API, it can be used to calculate an existing 
     /// Tedds calculation which is stored in a Tedds Calc Library. The output variables produced by running a 
-    /// calcaultion can be saved and then used as the input for a subsequent run of the calculation. Typically you would 
+    /// calculation can be saved and then used as the input for a subsequent run of the calculation. Typically you would 
     /// run the calculation once with the user interface enabled allowing you to setup the default input for a 
     /// design. Subsequent calculations can then be started using this default input with further changes 
-    /// applied to the input in your own code in order to automate a design workflow. 
+    /// applied to the input in your own code in order to automate a design work flow. 
     /// 
     /// Please note: This example is not production code in particular input validation and exception handling is generally 
     /// omitted or very basic
@@ -43,116 +73,212 @@ namespace TeddsAPITester
 
         /// <summary>
         /// Execute a calculation using the specified optional input variables and return only 
-        /// the output variables xml. Omitting the RTF output when it is not needed will improve performance.
+        /// the output variables XML. Omitting the RTF output when it is not needed will improve performance.
         /// </summary>
-        /// <param name="userName">If a Tekla online license is being used then this is the login user name for the Trimble Identity account to use.</param>
-        /// <param name="password">If a Tekla online license is being used then this is the login password for the Trimble Identity account to use</param>
-        /// <param name="inputVariablesXml">Input variables for the calculation in the Tedds variables xml file format.
-        /// Typically created as the output from a previous run of the calculation. Can be null or empty string.</param>
-        /// <param name="calcFileName">Full path of the Calc Library file which contains the Calc Item to calculate.</param>
-        /// <param name="calcItemName">Short name of the Calc Item to calculate.</param>
-        /// <param name="showUserInterface">Determines whether the user interface of the calcualtion is show or hidden.</param>
-        /// <returns>Returns all the calculated variables in the Tedds variables xml file format.</returns>
-        public string CalculateNoOutputRtf(string userName, string password, string inputVariablesXml, string calcFileName, string calcItemName, bool showUserInterface)
+        /// <returns>Returns all the calculated variables in the Tedds variables XML file format.</returns>
+        public void CalculateNoOutputRtf(string userName, string password, ref CalculationData data)
         {
             //Create calculator instance and initialize with input
             Calculator calculator = new Calculator();
             User32Native.SetForegroundWindow((IntPtr)calculator.WindowHandle);
 
-            //If online license login is required then login
+            //If on-line license login is required then login
             if (!(string.IsNullOrEmpty(userName) && string.IsNullOrEmpty(password)))
                 calculator.Login(userName, password);
 
             try
             {
-                this.IsEnabled = false;
+                ConnectEvents(ref calculator, data);
 
-                calculator.Initialize(null, inputVariablesXml);
+                DisableUI();
+
+                calculator.Initialize(null, data.InputVariablesXml);
 
                 //Apply additional settings/variables
-                calculator.Functions.SetVar("_CalcUI", showUserInterface ? 1 : 0);
+                calculator.Functions.SetVar("_CalcUI", data.ShowUserInterface ? 1 : 0);
 
                 //Calculate calculation
-                calculator.Functions.Eval($"EvalCalcItem( \"{calcFileName}\", \"{calcItemName}\" )");
+                calculator.Functions.Eval($"EvalCalcItem( \"{data.CalcFileName}\", \"{data.CalcItemName}\" )");
 
                 //Get output variables
-                return calculator.GetVariables();
+                data.OutputVariablesXml = calculator.GetVariables();
             }
             finally
             {
-                this.IsEnabled = true;
-                this.Activate();
+                EnableUI();
             }
         }
-
         /// <summary>
         /// Execute a calculation using the specified optional input variables and return both 
-        /// the output variables xml and the output document RTF.
+        /// the output variables XML and the output document RTF.
         /// </summary>
-        /// <param name="userName">If a Tekla online license is being used then this is the login user name for the Trimble Identity account to use.</param>
-        /// <param name="password">If a Tekla online license is being used then this is the login password for the Trimble Identity account to use</param>
-        /// <param name="inputVariablesXml">Input variables for the calculation in the Tedds variables xml file format.
-        /// Typically created as the output from a previous run of the calculation. Can be null or empty string.</param>
-        /// <param name="calcFileName">Full path of the Calc Library file which contains the Calc Item to calculate.</param>
-        /// <param name="calcItemName">Short name of the Calc Item to calculate.</param>
-        /// <param name="showUserInterface">Determines whether the user interface of the calcualtion is show or hidden.</param>
-        /// <param name="outputVariablesXml">Returns all the calculated variables in the Tedds variables xml file format.</param>
-        /// <param name="outputRtf">Returns the document output of the calculation in the RTF format.</param>
-        /// <param name="outputPdf">Returns the document output of the calculation in the PDF format.</param>
-        public void Calculate(string userName, string password, string inputVariablesXml, string calcFileName, string calcItemName,
-            bool showUserInterface, out string outputVariablesXml, out string outputRtf, out string outputPdf)
+        /// <param name="userName">If a Tekla on-line license is being used then this is the login user name for the Trimble Identity account to use.</param>
+        /// <param name="password">If a Tekla on-line license is being used then this is the login password for the Trimble Identity account to use.</param>
+        /// <param name="data">Calculation data.</param>
+        public void CalculateOutputRtf(string userName, string password, ref CalculationData data)
         {
-            outputVariablesXml = outputRtf = outputPdf = null;
+            //Initialize output
+            data.OutputVariablesXml = data.OutputRtf = data.OutputPdf = null;
 
-            //Create first calculator instance which is only required for retrieving RTF and getting modified input variables
-            Calculator calculator = new Calculator();
-
-            //If online license login is required then login
-            if (!(string.IsNullOrEmpty(userName) && string.IsNullOrEmpty(password)))
-                calculator.Login(userName, password);
-
-            if (!showUserInterface)
+            if (!data.ShowUserInterface)
             {
+                //Create first calculator instance which is only required for retrieving input variables
+                Calculator calculator = new Calculator();
+                User32Native.SetForegroundWindow((IntPtr)calculator.WindowHandle);
+
+                //If on-line license login is required then login
+                if (!(string.IsNullOrEmpty(userName) && string.IsNullOrEmpty(password)))
+                    calculator.Login(userName, password);
+
                 //Apply additional settings/variables to existing input
-                calculator.Initialize(null, inputVariablesXml);
+                calculator.Initialize(null, data.InputVariablesXml);
                 calculator.Functions.SetVar("_CalcUI", 0);
-                inputVariablesXml = calculator.GetVariables();
-            }
-            else
-            {
-                calculator.Initialize(null, null);
+                data.InputVariablesXml = calculator.GetVariables();
             }
 
-            //Use Tedds function "GetCalcItemText" to get RTF Input/Output for calculation
-            ICalcValue calcItemRtf = calculator.Functions.Eval($"GetCalcItemText( \"{calcFileName}\", \"{calcItemName}\" )");
-            //Decode Tedds string to correctly formatted RTF
-            string inputRtf = calcItemRtf.ToString().Replace("\\\"", "\"").Replace("\\;", ";");
-
-            //Initialize second calculator but this time with input/output RTF and input variables
+            //Initialize second calculator but this time with input variables
             Calculator calculator2 = new Calculator();
             User32Native.SetForegroundWindow((IntPtr)calculator2.WindowHandle);
 
+            //If on-line license login is required then login
+            if (!(string.IsNullOrEmpty(userName) && string.IsNullOrEmpty(password)))
+                calculator2.Login(userName, password);
+
+            ConnectEvents(ref calculator2, data);
+
             try
             {
-                this.IsEnabled = false;
-                calculator2.Initialize(inputRtf, inputVariablesXml);
+                DisableUI();
+                calculator2.InitializeCalc(data.CalcFileName, data.CalcItemName, data.InputVariablesXml);
 
                 if (calculator2.Status == CalcStatus.Ok ||
                     calculator2.Status == CalcStatus.Interrupted)
                 {
                     //Retrieve output
-                    outputVariablesXml = calculator2.GetVariables();
-                    outputRtf = calculator2.GetOutput(OutputFormat.Rtf);
-                    outputPdf = calculator2.GetOutput(OutputFormat.Pdf);
+                    data.OutputRtf = calculator2.GetOutput(OutputFormat.Rtf);
+                    data.OutputVariablesXml = calculator2.GetVariables();
+                    data.OutputPdf = calculator2.GetOutput(OutputFormat.Pdf);
                 }
             }
             finally
             {
-                this.IsEnabled = true;
-                this.Activate();
+                EnableUI();
             }
         }
+        /// <summary>
+        /// Run the calculation process
+        /// </summary>
+        /// <param name="userName">If a Tekla on-line license is being used then this is the login user name for the Trimble Identity account to use.</param>
+        /// <param name="password">If a Tekla on-line license is being used then this is the login password for the Trimble Identity account to use</param>
+        /// <param name="data">Calculation data.
+        private void Calculate(string userName, string password, ref CalculationData data)
+        {
+            if (data.CreateOutputRtf)
+                CalculateOutputRtf(userName, password, ref data);
+            else
+                CalculateNoOutputRtf(userName, password, ref data);
+        }
+        #endregion
 
+        #region "Calculator Events"
+        /// <summary>
+        /// Calculating progress event handler
+        /// 
+        /// IMPORTANT NOTE: Responding to progress events can significantly affect calculation performance!
+        /// 
+        /// </summary>
+        /// <param name="progressEvent">Event type</param>
+        /// <param name="value">Event value</param>
+        /// <param name="text">Event text (if applicable)</param>
+        /// <param name="status">Return status</param>
+        public void CalculatingProgress(CalcProgressEvent progressEvent, uint value, string text, ref CalcStatus status)
+        {
+            //Dispatch UI commands to the UI thread
+            Dispatcher.Invoke(() =>
+            {
+                switch (progressEvent)
+                {
+                    case CalcProgressEvent.ProgressReset:
+                        _progressBar.Visibility = Visibility.Visible;
+                        _progressBar.Minimum = 0;
+                        _progressBar.Maximum = value;
+                        _progressBar.Value = 0;
+                        break;
+
+                    case CalcProgressEvent.ProgressSetPos:
+                        _progressBar.Value = value;
+                        break;
+
+                    case CalcProgressEvent.ProgressSetText:
+                        StatusText = text;
+                        break;
+
+                    case CalcProgressEvent.ProgressAddOutput:
+                        StatusText = $"{value}: {text}";
+                        break;
+
+                    case CalcProgressEvent.ProgressShow:
+                        _progressBar.Visibility = Visibility.Visible;
+                        break;
+
+                    case CalcProgressEvent.ProgressFinished:
+                    case CalcProgressEvent.ProgressHide:
+                        _progressBar.Visibility = Visibility.Hidden;
+                        break;
+                }
+            });
+
+            //Change status to stop the calculation process
+            //status = CalcStatus.Aborted;
+        }
+        /// <summary>
+        /// Calculation error event handler
+        /// </summary>
+        /// <param name="errorType">Type of error</param>
+        /// <param name="errorCode">Unique error identifier code</param>
+        /// <param name="context">Error context</param>
+        /// <param name="message">Error message</param>
+        /// <param name="expression">Expression which caused the error, limited to the first 1024 characters</param>
+        /// <param name="options">Error options</param>
+        /// <param name="status">Return status</param>
+        private void CalculatingError(CalcErrorType errorType, uint errorCode, string context, string message, string expression, uint options, ref CalcStatus status)
+        {
+            MessageBoxButton button = (errorType == CalcErrorType.ErrorExpression) ? MessageBoxButton.OKCancel : MessageBoxButton.OK;
+            MessageBoxResult result = MessageBoxResult.OK;
+
+            //Dispatch UI commands to the UI thread
+            Dispatcher.Invoke(() =>
+            {
+                result = MessageBox.Show(
+                    this,
+                    $"An error has occurred whilst calculating\n\ncontext: {context}\nExpression: {expression}\n\n{message}\n",
+                    "Calculation Error",
+                    button,
+                    MessageBoxImage.Error);
+            });
+
+            if (errorType == CalcErrorType.ErrorExpression && result != MessageBoxResult.OK)
+                status = CalcStatus.Aborted; //status = CalcStatus.Interrupted; //Interrupt to show the error in the output and keep the current variables
+        }
+        /// <summary>
+        /// Undefined variable error event handler
+        /// </summary>
+        /// <param name="variableName">Name of undefined variable</param>
+        /// <param name="value">Expression to return as the variables new value</param>
+        private void UndefinedVariable(string variableName, out string value)
+        {
+            string input = null;
+            Dispatcher.Invoke(() =>
+            {
+                SimpleInputDialog inputDialog = new SimpleInputDialog();
+                inputDialog.Title = "Undefined variable";
+                inputDialog.Description = $"Enter a value for '{variableName}' (include units)";
+                inputDialog.Owner = this;
+                if (inputDialog.ShowDialog() == true)
+                    input = inputDialog.Input;
+            });
+            value = input;
+        }
         #endregion
 
         #region "Document serialization methods"
@@ -166,7 +292,7 @@ namespace TeddsAPITester
             SaveWithTedds(fileName, document => document.SaveAs(fileName));
         }
         /// <summary>
-        /// Using the Tedds application create a pdf file.
+        /// Using the Tedds application create a PDF file.
         /// </summary>
         /// <param name="fileName">Output file name</param>
         public void SaveTeddsPdf(string fileName)
@@ -210,7 +336,7 @@ namespace TeddsAPITester
             }
             catch (COMException ex)
             {
-                StatusText = $"Exception occured: {ex.Message}";
+                StatusText = $"Exception occurred: {ex.Message}";
             }
             finally
             {
@@ -233,12 +359,12 @@ namespace TeddsAPITester
         /// </summary>
         /// <param name="parentWindow">Parent window of the control</param>
         /// <param name="libraryName">Stores the name of the Calc Library file</param>
-        /// <param name="dialogTitle">Title to show on browse dilaog</param>
+        /// <param name="dialogTitle">Title to show on browse dialog</param>
         /// <param name="saveLibrary">Bool specifying whether to save library</param>
         /// <param name="systemDirectories">Bool specifying whether to look for calcs in system directory</param>
         /// <param name="userDirectories">Bool specifying whether to look for calcs in user directory</param>
         /// <param name="usePlaceholders">Bool specifying whether to use place holders in path</param>
-        /// <returns>True if a Calc Library was selected, false if the browse dialog was cancelled</returns>
+        /// <returns>True if a Calc Library was selected, false if the browse dialog was canceled</returns>
         private static bool SelectCalcLibrary(IntPtr parentWindow, ref string libraryName, string dialogTitle = DefaultLibraryTitle,
             bool saveLibrary = false, bool systemDirectories = true, bool userDirectories = true, bool usePlaceholders = true)
         {
@@ -266,7 +392,7 @@ namespace TeddsAPITester
         /// <param name="parentWindow">Parent window of the control</param>
         /// <param name="libraryName">Name of Calc Library to browse items in</param>
         /// <param name="itemName">Stores the name of the Calc Item</param>
-        /// <param name="dialogTitle">Title to show on browse dilaog</param>
+        /// <param name="dialogTitle">Title to show on browse dialog</param>
         /// <param name="saveItem">Bool specifying whether to save item</param>
         /// <returns>True if a Calc Item was selected, false if the browse dialog was cancelled</returns>
         private static bool SelectCalcItem(IntPtr parentWindow, string libraryName, ref string itemName, string dialogTitle = DefaultItemTitle, bool saveItem = false)
@@ -332,41 +458,87 @@ namespace TeddsAPITester
         /// <param name="e">Event arguments</param>
         private void OnCalculateButtonClick(object sender, RoutedEventArgs e)
         {
-            //Very basic input validation
-            if (!string.IsNullOrEmpty(InputVariablesFileName) && !File.Exists(InputVariablesFileName))
-            {
-                StatusText = $"Select a valid input file, '{InputVariablesFileName}' does not exist.";
+            string userName = UserName;
+            string password = Password;
+            CalculationData data = new CalculationData();
+            if (!ValidateInput())
                 return;
+
+            ClearResults();
+
+            //Start
+            string statusText = "";
+            StatusText = $"Started calculating {CalcItemName}...";
+            
+            //If any events are enabled then the calculation process must be started asynchronously so that 
+            //this main thread can listen and respond to those events
+            if (IsAsyncCalculatingRequired)
+            {
+                Task.Run(() =>
+                {
+                    DoCalculate();
+                    //Use invoker so that if this is being run on a worker thread we can update the UI on the main thread
+                    Dispatcher.Invoke(UpdateResults);
+                });
             }
-            if (string.IsNullOrEmpty(CalcFileName) || string.IsNullOrEmpty(CalcItemName))
+            else
             {
-                StatusText = "Enter the libray file name and the item name of the calculation you want to calculate";
-                return;
+                DoCalculate();
+                UpdateResults();
             }
 
-            StatusText = $"Started calculating {CalcItemName}...";
-            OutputRtf = OutputVariablesXml = null;
-            try
+            //Validate input
+            bool ValidateInput()
             {
-                string outputVariablesXml;
-                if (IsCreateOutputRtfEnabled)
+                //Very basic input validation
+                if (!string.IsNullOrEmpty(InputVariablesFileName) && !File.Exists(InputVariablesFileName))
                 {
-                    Calculate(UserName, Password, InputVariablesXml, CalcFileName, CalcItemNameEncoded,
-                        IsShowUserInterfaceEnabled, out outputVariablesXml, out string outputRtf, out string outputPdf);
-                    OutputRtf = outputRtf;
-                    OutputPdf = outputPdf;
+                    StatusText = $"Select a valid input file, '{InputVariablesFileName}' does not exist.";
+                    return false;
                 }
-                else
+                if (string.IsNullOrEmpty(CalcFileName) || string.IsNullOrEmpty(CalcItemName))
                 {
-                    outputVariablesXml = CalculateNoOutputRtf(UserName, Password, InputVariablesXml, CalcFileName, CalcItemNameEncoded,
-                        IsShowUserInterfaceEnabled);
+                    StatusText = "Enter the library file name and the item name of the calculation you want to calculate";
+                    return false;
                 }
-                OutputVariablesXml = outputVariablesXml;
-                StatusText = "...finished Calculating";
+
+                //Get input
+                data.InputVariablesXml = InputVariablesXml;
+                data.CalcFileName = CalcFileName;
+                data.CalcItemName = CalcItemNameEncoded;
+                data.ShowUserInterface = IsShowUserInterfaceEnabled;
+                data.CreateOutputRtf = IsCreateOutputRtfEnabled;
+                data.CalculatingProgressEvents = CalculatingProgressEvents;
+                data.UndefinedVariableEvents = UndefinedVariableEvents;
+                data.ErrorEvents = ErrorEvents;
+
+                return true;
+            }            
+            //Execute the calculation
+            void DoCalculate()
+            {
+                try
+                {
+                    Calculate(userName, password, ref data);
+                    statusText = "...finished Calculating";
+                }
+                catch (COMException ex)
+                {
+                    statusText = $"Exception occurred: {ex.Message}";
+                }
             }
-            catch (COMException ex)
+            //Clear output results
+            void ClearResults()
             {
-                StatusText = $"Exception occured: {ex.Message}";
+                OutputRtf = OutputVariablesXml = null;
+            }
+            //Update the User interface after calculating
+            void UpdateResults()
+            {
+                StatusText = statusText;
+                OutputVariablesXml = data.OutputVariablesXml;
+                OutputRtf = data.OutputRtf;
+                OutputPdf = data.OutputPdf;
             }
         }
         /// <summary>
@@ -460,7 +632,7 @@ namespace TeddsAPITester
         }
         /// <summary>
         /// Save output variables button event handler. 
-        /// Browse for location to save calcualtion ouptut variables to as an xml file which can 
+        /// Browse for location to save calculation output variables to as an XML file which can 
         /// be used as the input for a subsequent run of the calculation.
         /// </summary>
         /// <param name="sender">Sender of event</param>
@@ -564,7 +736,7 @@ namespace TeddsAPITester
             _passwordTextBox.Password;
 
         /// <summary>
-        /// Full path of input variables xml file
+        /// Full path of input variables XML file
         /// </summary>
         public string InputVariablesFileName
         {
@@ -594,12 +766,12 @@ namespace TeddsAPITester
             //Semicolons exist in some old calculation item names, these must be encoded because the semicolon is the expression delimiter
             _calcItemNameTextBox.Text.Replace(";", "\\;");
         /// <summary>
-        /// Input variables for the calculation in the Tedds variables xml file format 
+        /// Input variables for the calculation in the Tedds variables XML file format 
         /// </summary>
         public string InputVariablesXml =>
             File.Exists(InputVariablesFileName) ? File.ReadAllText(InputVariablesFileName) : null;
         /// <summary>
-        /// Output variables from the last run of the calculation in the Tedds variables xml file format.
+        /// Output variables from the last run of the calculation in the Tedds variables XML file format.
         /// </summary>
         public string OutputVariablesXml
         {
@@ -649,7 +821,7 @@ namespace TeddsAPITester
             }
         }
         /// <summary>
-        /// Calculating option which determines whether the user interface of the calcualtion is show or hidden
+        /// Calculating option which determines whether the user interface of the calculation is show or hidden
         /// </summary>
         public bool IsShowUserInterfaceEnabled
         {
@@ -664,7 +836,88 @@ namespace TeddsAPITester
             get { return _createOutputRtfCheckBox.IsChecked == true; }
             set { _createOutputRtfCheckBox.IsChecked = value; }
         }
+        /// <summary>
+        /// Are calculating progress events enabled
+        /// </summary>
+        public bool CalculatingProgressEvents
+        {
+            get { return _enableCalculatingProgressEvents.IsChecked == true; }
+        }
+        /// <summary>
+        /// Are undefined variable events enabled
+        /// </summary>
+        public bool UndefinedVariableEvents
+        {
+            get { return _enableUndefinedVariableEvents.IsChecked == true; }
+        }
+        /// <summary>
+        /// Are error events enabled
+        /// </summary>
+        public bool ErrorEvents
+        {
+            get { return _enableErrorEvents.IsChecked == true;  }
+        }
+        /// <summary>
+        /// Is asynchronous calculating required
+        /// </summary>
+        public bool IsAsyncCalculatingRequired
+        {
+            //If any event listening options are enabled then the calculation process must be executed asynchronously 
+            //so that the UI thread can be responsive to those events
+            get
+            {
+                return (CalculatingProgressEvents || UndefinedVariableEvents || ErrorEvents);
+            }
+        }
 
+        #endregion
+
+        #region General methods
+        /// <summary>
+        /// Initialize a calculator instance to listen to specific events according to the event options.
+        /// </summary>
+        /// <param name="calculator">Calculator instance to initialize</param>
+        private void ConnectEvents(ref Calculator calculator, CalculationData data)
+        {
+            if (data.CalculatingProgressEvents)
+            {
+                calculator.CalculatingProgress += CalculatingProgress;
+                calculator.CalculatingProgressEvents = true;
+            }
+            if (data.UndefinedVariableEvents)
+            {
+                calculator.UndefinedVariable += UndefinedVariable;
+                calculator.UndefinedVariableEvents = true;
+            }
+            if (data.ErrorEvents)
+            {
+                calculator.CalculatingError += CalculatingError;
+                calculator.CalculatingErrorEvents = true;
+            }
+        }
+        /// <summary>
+        /// Disable the user interface
+        /// </summary>
+        public void DisableUI()
+        {
+            //Use invoker so that code will work synchronously or asynchronously
+            Dispatcher.Invoke(() =>
+            {
+                IsEnabled = false;
+            });
+        }
+        /// <summary>
+        /// Enable the user interface
+        /// </summary>
+        public void EnableUI()
+        {
+            //Use invoker so that code will work synchronously or asynchronously
+            Dispatcher.Invoke(() =>
+            {
+                IsEnabled = true;
+                Activate();
+            });
+        }
         #endregion
 
         #region "Private members"

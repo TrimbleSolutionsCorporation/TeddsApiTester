@@ -76,15 +76,11 @@ namespace TeddsAPITester
         /// the output variables XML. Omitting the RTF output when it is not needed will improve performance.
         /// </summary>
         /// <returns>Returns all the calculated variables in the Tedds variables XML file format.</returns>
-        public void CalculateNoOutputRtf(string userName, string password, ref CalculationData data)
+        public void CalculateNoOutputRtf(ref CalculationData data)
         {
             //Create calculator instance and initialize with input
             Calculator calculator = new Calculator();
             User32Native.SetForegroundWindow((IntPtr)calculator.WindowHandle);
-
-            //If on-line license login is required then login
-            if (!(string.IsNullOrEmpty(userName) && string.IsNullOrEmpty(password)))
-                calculator.Login(userName, password);
 
             try
             {
@@ -112,10 +108,8 @@ namespace TeddsAPITester
         /// Execute a calculation using the specified optional input variables and return both 
         /// the output variables XML and the output document RTF.
         /// </summary>
-        /// <param name="userName">If a Tekla on-line license is being used then this is the login user name for the Trimble Identity account to use.</param>
-        /// <param name="password">If a Tekla on-line license is being used then this is the login password for the Trimble Identity account to use.</param>
         /// <param name="data">Calculation data.</param>
-        public void CalculateOutputRtf(string userName, string password, ref CalculationData data)
+        public void CalculateOutputRtf(ref CalculationData data)
         {
             //Initialize output
             data.OutputVariablesXml = data.OutputRtf = data.OutputPdf = null;
@@ -126,10 +120,6 @@ namespace TeddsAPITester
                 Calculator calculator = new Calculator();
                 User32Native.SetForegroundWindow((IntPtr)calculator.WindowHandle);
 
-                //If on-line license login is required then login
-                if (!(string.IsNullOrEmpty(userName) && string.IsNullOrEmpty(password)))
-                    calculator.Login(userName, password);
-
                 //Apply additional settings/variables to existing input
                 calculator.Initialize(null, data.InputVariablesXml);
                 calculator.Functions.SetVar("_CalcUI", 0);
@@ -139,10 +129,6 @@ namespace TeddsAPITester
             //Initialize second calculator but this time with input variables
             Calculator calculator2 = new Calculator();
             User32Native.SetForegroundWindow((IntPtr)calculator2.WindowHandle);
-
-            //If on-line license login is required then login
-            if (!(string.IsNullOrEmpty(userName) && string.IsNullOrEmpty(password)))
-                calculator2.Login(userName, password);
 
             ConnectEvents(ref calculator2, data);
 
@@ -168,15 +154,13 @@ namespace TeddsAPITester
         /// <summary>
         /// Run the calculation process
         /// </summary>
-        /// <param name="userName">If a Tekla on-line license is being used then this is the login user name for the Trimble Identity account to use.</param>
-        /// <param name="password">If a Tekla on-line license is being used then this is the login password for the Trimble Identity account to use</param>
         /// <param name="data">Calculation data.
-        private void Calculate(string userName, string password, ref CalculationData data)
+        private void Calculate(ref CalculationData data)
         {
             if (data.CreateOutputRtf)
-                CalculateOutputRtf(userName, password, ref data);
+                CalculateOutputRtf(ref data);
             else
-                CalculateNoOutputRtf(userName, password, ref data);
+                CalculateNoOutputRtf(ref data);
         }
         #endregion
 
@@ -458,8 +442,6 @@ namespace TeddsAPITester
         /// <param name="e">Event arguments</param>
         private void OnCalculateButtonClick(object sender, RoutedEventArgs e)
         {
-            string userName = UserName;
-            string password = Password;
             CalculationData data = new CalculationData();
             if (!ValidateInput())
                 return;
@@ -519,7 +501,7 @@ namespace TeddsAPITester
             {
                 try
                 {
-                    Calculate(userName, password, ref data);
+                    Calculate(ref data);
                     statusText = "...finished Calculating";
                 }
                 catch (COMException ex)
@@ -724,16 +706,6 @@ namespace TeddsAPITester
         #endregion
 
         #region "Properties"
-        /// <summary>
-        /// Login user name for the Trimble Identity account to use
-        /// </summary>
-        public string UserName =>
-            _userNameTextBox.Text;
-        /// <summary>
-        /// Login password for the Trimble Identity account to use
-        /// </summary>
-        public string Password =>
-            _passwordTextBox.Password;
 
         /// <summary>
         /// Full path of input variables XML file

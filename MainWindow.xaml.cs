@@ -318,9 +318,9 @@ namespace TeddsAPITester
 
                 StatusText = "Tedds document created successfully";
             }
-            catch (COMException ex)
+            catch (Exception ex)
             {
-                StatusText = $"Exception occurred: {ex.Message}";
+                SetStatus(ex);
             }
             finally
             {
@@ -449,7 +449,6 @@ namespace TeddsAPITester
             ClearResults();
 
             //Start
-            string statusText = "";
             StatusText = $"Started calculating {CalcItemName}...";
             
             //If any events are enabled then the calculation process must be started asynchronously so that 
@@ -502,11 +501,11 @@ namespace TeddsAPITester
                 try
                 {
                     Calculate(ref data);
-                    statusText = "...finished Calculating";
+                    StatusText = "...finished Calculating";
                 }
-                catch (COMException ex)
+                catch (Exception ex)
                 {
-                    statusText = $"Exception occurred: {ex.Message}";
+                    SetStatus(ex);
                 }
             }
             //Clear output results
@@ -517,7 +516,6 @@ namespace TeddsAPITester
             //Update the User interface after calculating
             void UpdateResults()
             {
-                StatusText = statusText;
                 OutputVariablesXml = data.OutputVariablesXml;
                 OutputRtf = data.OutputRtf;
                 OutputPdf = data.OutputPdf;
@@ -787,9 +785,7 @@ namespace TeddsAPITester
             get { return _statusTextLabel.Text; }
             set
             {
-                _statusTextLabel.Text = value;
-                //Force an update of the status text
-                Dispatcher.Invoke(DispatcherPriority.Input, new Action(() => { }));
+                SetStatus(value);
             }
         }
         /// <summary>
@@ -889,6 +885,32 @@ namespace TeddsAPITester
                 IsEnabled = true;
                 Activate();
             });
+        }
+        /// <summary>
+        /// Set the status information on the window
+        /// </summary>
+        /// <param name="text">Text to show on the window</param>
+        /// <param name="tooltip">Tool tip text</param>
+        public void SetStatus(string text, string tooltip = null)
+        {
+            if (CheckAccess())
+                SetStatus();
+            else
+                Dispatcher.Invoke(SetStatus);
+
+            void SetStatus()
+            {
+                _statusTextLabel.Text = text;
+                _statusTextLabel.ToolTip = tooltip;
+            }
+        }
+        /// <summary>
+        /// Set the status from an exception
+        /// </summary>
+        /// <param name="ex">Exception</param>
+        public void SetStatus(Exception ex)
+        {
+            SetStatus( $"Exception occurred: {ex.Message}", ex.ToString());
         }
         #endregion
 

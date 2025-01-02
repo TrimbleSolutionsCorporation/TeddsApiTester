@@ -9,11 +9,11 @@
     <PlatformTarget>AnyCPU</PlatformTarget>
     <TargetFramework>net8.0-windows</TargetFramework>
     <UseWPF>true</UseWPF>
-    <Version>26.0.0.1</Version>
+    <Version>27.0.1.0</Version>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="TeklaTeddsAPI" version="26.0.0" />
+    <PackageReference Include="TeklaTeddsAPI" version="27.0.1" />
   </ItemGroup>
 
   <ItemGroup>
